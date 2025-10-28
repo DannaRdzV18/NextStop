@@ -19,7 +19,7 @@ frontend/.env.production.local
 
 # IDEs
 .vscode/
-.idea/
+../.idea/
 *.swp
 *.swo
 
