@@ -1,0 +1,91 @@
+.home {
+    min-height: calc(100vh - 90px);
+    background-color: #f5f5f5;
+    padding: 20px;
+}
+
+.home-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    gap: 30px;
+}
+
+.left-section {
+    background-color: white;
+    padding: 40px;
+    border-radius: 15px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.hero-section {
+    margin-bottom: 30px;
+}
+
+.hero-section h1 {
+    font-size: 2em;
+    color: #2c3e50;
+    margin-bottom: 10px;
+}
+
+.hero-section p {
+    color: #7f8c8d;
+    font-size: 1.1em;
+}
+
+.right-section {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.inspiration-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background-color: white;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.plane-icon {
+    font-size: 2em;
+    width: 80px;
+    height: 80px;
+}
+
+.inspiration-header h2 {
+    font-size: 1.3em;
+    color: #2c3e50;
+    margin: 0;
+}
+
+.destination-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .home-container {
+        grid-template-columns: 1fr;
+    }
+
+    .destination-cards {
+        flex-direction: row;
+        overflow-x: auto;
+    }
+}
+
+@media (max-width: 768px) {
+    .left-section {
+        padding: 20px;
+    }
+
+    .hero-section h1 {
+        font-size: 1.5em;
+    }
+}
