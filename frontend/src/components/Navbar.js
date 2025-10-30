@@ -1,14 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './Navbar.css';
 import LoginModal from './LoginModal';
 import logo from '../assets/images/logo_nextstop.png';
 import { FaUser } from 'react-icons/fa';
 import { HiMenu } from 'react-icons/hi';
 
-
 function Navbar() {
     const [showLoginModal, setShowLoginModal] = useState(false);
     const [showMenu, setShowMenu] = useState(false);
+    const [usuario, setUsuario] = useState(null);
+
+    useEffect(() => {
+        const storedUser = localStorage.getItem('usuario');
+        if (storedUser) {
+            setUsuario(JSON.parse(storedUser).usuario);
+        }
+    }, []);
 
     return (
         <>
@@ -40,7 +47,7 @@ function Navbar() {
                         onClick={() => setShowLoginModal(true)}
                     >
                         <FaUser className="user-icon" />
-                        Iniciar sesión
+                        {usuario ? usuario.nombre : "Iniciar sesión"}
                     </button>
 
                     <button
@@ -54,7 +61,10 @@ function Navbar() {
             </nav>
 
             {showLoginModal && (
-                <LoginModal onClose={() => setShowLoginModal(false)} />
+                <LoginModal
+                    onClose={() => setShowLoginModal(false)}
+                    onLogin={(userData) => setUsuario(userData)} // <-- Pasamos función al modal
+                />
             )}
         </>
     );

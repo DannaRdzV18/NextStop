@@ -1,5 +1,5 @@
 from django.urls import path
-from backend.usuarios.views import RegistroUsuarioView, VerificarCorreoView, LoginUsuarioView
+from .views import RegistroUsuarioView, VerificarCorreoView, LoginUsuarioView
 
 urlpatterns = [
     path('registrar/', RegistroUsuarioView.as_view(), name='registrar_usuario'),

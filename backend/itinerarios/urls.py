@@ -1,5 +1,5 @@
 from django.urls import path
-from backend.itinerarios.views import CrearItinerarioView, ListarItinerariosView, VuelosView, HotelesView
+from .views import CrearItinerarioView, ListarItinerariosView, VuelosView, HotelesView
 
 urlpatterns = [
     path('', ListarItinerariosView.as_view(), name='listar_itinerarios'),

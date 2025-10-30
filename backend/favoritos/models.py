@@ -1,5 +1,5 @@
 from django.db import models
-from backend.usuarios.models import Usuario
+from usuarios.models import Usuario
 
 class Favorito(models.Model):
     TIPO_RECURSO_CHOICES = [

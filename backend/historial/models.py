@@ -1,5 +1,5 @@
 from django.db import models
-from backend.usuarios.models import Usuario
+from usuarios.models import Usuario
 
 class HistorialBusqueda(models.Model):
     ORIGEN_CHOICES = [

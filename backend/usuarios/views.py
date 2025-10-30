@@ -2,14 +2,13 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny
-from backend.usuarios.serializers import UsuarioSerializer
-from backend.usuarios.models import Usuario
+from .serializers import UsuarioSerializer
+from .models import Usuario
 import random
 from django.core.mail import send_mail
 from django.conf import settings
-from django.contrib.auth.hashers import make_password
-from backend.usuarios.utils import verificar_recaptcha
-from django.contrib.auth.hashers import check_password
+from django.contrib.auth.hashers import make_password, check_password
+from .utils import verificar_recaptcha
 
 class RegistroUsuarioView(APIView):
     permission_classes = [AllowAny]
@@ -20,22 +19,32 @@ class RegistroUsuarioView(APIView):
 
         # Verificar CAPTCHA
         if not verificar_recaptcha(token):
-            if token == "fake-token":
-                pass
-            else:
+            if token != "fake-token":
                 return Response({'error': 'No pasó la verificación del CAPTCHA'}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Crear hash de contraseña
         if 'password' in data:
             data['password_hash'] = make_password(data.pop('password'))
+
+        # Asegurarse de que campos opcionales tengan valor por defecto
+        data.setdefault('telefono', '')
+        data.setdefault('idioma_preferido', 'es')
+        data.setdefault('moneda_preferida', 'MXN')
+
+        # Validar si el email ya existe antes de llamar al serializer
+        if Usuario.objects.filter(email=data.get('email')).exists():
+            return Response({'error': 'Este correo ya está registrado'}, status=status.HTTP_400_BAD_REQUEST)
 
         serializer = UsuarioSerializer(data=data)
         if serializer.is_valid():
             usuario = serializer.save(email_verificado=False)
 
-            codigo = random.randint(100000, 999999)
+            # Código de verificación de 4 dígitos
+            codigo = random.randint(1000, 9999)
             usuario.codigo_verificacion = codigo
             usuario.save()
 
+            # Enviar correo
             send_mail(
                 'Verificación de cuenta NextStop',
                 f'Tu código de verificación es: {codigo}',
@@ -46,8 +55,8 @@ class RegistroUsuarioView(APIView):
 
             return Response({'mensaje': 'Usuario creado. Revisa tu correo para verificar tu cuenta.'}, status=status.HTTP_201_CREATED)
 
+        print(serializer.errors)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 class VerificarCorreoView(APIView):
     permission_classes = [AllowAny]
@@ -68,6 +77,7 @@ class VerificarCorreoView(APIView):
             return Response({'mensaje': 'Correo verificado correctamente'}, status=status.HTTP_200_OK)
         else:
             return Response({'error': 'Código incorrecto'}, status=status.HTTP_400_BAD_REQUEST)
+
 
 class LoginUsuarioView(APIView):
     permission_classes = [AllowAny]

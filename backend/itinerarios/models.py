@@ -1,6 +1,5 @@
-# itinerarios/models.py
 from django.db import models
-from backend.usuarios.models import Usuario
+from usuarios.models import Usuario
 
 class Itinerario(models.Model):
     usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE)

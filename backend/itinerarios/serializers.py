@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from backend.itinerarios.models import Itinerario, DetalleItinerario
+from .models import Itinerario, DetalleItinerario
 
 class DetalleItinerarioSerializer(serializers.ModelSerializer):
     class Meta:

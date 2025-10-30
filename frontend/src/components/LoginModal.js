@@ -4,8 +4,9 @@ import logo from '../assets/images/logo_nextstop.png';
 import { AiFillEye, AiFillEyeInvisible } from 'react-icons/ai';
 import { IoClose } from 'react-icons/io5';
 import { FaUser, FaEnvelope } from 'react-icons/fa';
+import axios from 'axios';
 
-function LoginModal({ onClose }) {
+function LoginModal({ onClose, setUsuarioLogueado }) {
     const [step, setStep] = useState('options');
     const [formData, setFormData] = useState({
         name: '',
@@ -14,23 +15,79 @@ function LoginModal({ onClose }) {
     });
     const [verificationCode, setVerificationCode] = useState(['', '', '', '']);
     const [showPassword, setShowPassword] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [message, setMessage] = useState('');
 
-    const handleLogin = () => {
-        console.log('Iniciando sesión:', { email: formData.email, password: formData.password });
+    // ⚙️ Cambia esto por la URL base de tu backend
+    const API_URL = 'http://127.0.0.1:8000/api/usuarios/';
+
+    // 🔹 Iniciar sesión
+    const handleLogin = async () => {
+    try {
+        setLoading(true);
+        const response = await axios.post(`${API_URL}login/`, {
+            email: formData.email,
+            password: formData.password
+        });
+
+        setMessage('Inicio de sesión exitoso');
+        console.log('Usuario logueado:', response.data);
+
+        // Guardar en localStorage
+        localStorage.setItem('usuario', JSON.stringify(response.data));
+
+        // Actualizar estado en Navbar
+        setUsuarioLogueado(response.data.usuario); // esto actualiza el navbar
+        localStorage.setItem('usuario', JSON.stringify(response.data.usuario));
+
+
         onClose();
-    };
+    } catch (error) {
+        console.error(error);
+        setMessage('Correo o contraseña incorrectos');
+    } finally {
+        setLoading(false);
+    }
+};
 
-    const handleSendVerification = () => {
-        if (formData.name && formData.email && passwordValid) {
-            console.log('Creando cuenta y enviando código a:', formData.email);
-            setStep('verify');
-        }
-    };
+    // 🔹 Registrar usuario y enviar código
+    const handleSendVerification = async () => {
+    try {
+        const payload = {
+            nombre: formData.name,
+            email: formData.email,
+            password: formData.password,
+            recaptcha_token: 'fake-token' // mientras pruebas
+        };
 
-    const handleVerifyCode = () => {
+        const response = await axios.post('http://127.0.0.1:8000/api/usuarios/registrar/', payload);
+        console.log(response.data);
+        setStep('verify');
+    } catch (error) {
+        console.error(error);
+        alert(error.response?.data?.error || "Error al registrar usuario");
+    }
+};
+
+    // 🔹 Verificar código
+    const handleVerifyCode = async () => {
         const code = verificationCode.join('');
-        console.log('Verificando código:', code);
-        onClose();
+        try {
+            setLoading(true);
+            const response = await axios.post(`${API_URL}verificar/`, {
+                email: formData.email,
+                codigo: code
+            });
+
+            console.log('Verificación exitosa:', response.data);
+            setMessage('Cuenta verificada correctamente');
+            onClose();
+        } catch (error) {
+            console.error(error);
+            setMessage('Código inválido o expirado');
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleCodeInput = (index, value) => {
@@ -67,6 +124,8 @@ function LoginModal({ onClose }) {
                     <h2>NEXTSTOP</h2>
                     <p className="modal-subtitle">Travel Planner</p>
                 </div>
+
+                {message && <p className="status-message">{message}</p>}
 
                 {step === 'options' && (
                     <div className="options-step">
@@ -132,9 +191,9 @@ function LoginModal({ onClose }) {
                         <button
                             className="primary-btn"
                             onClick={handleLogin}
-                            disabled={!formData.email || !formData.password}
+                            disabled={!formData.email || !formData.password || loading}
                         >
-                            Iniciar sesión
+                            {loading ? 'Cargando...' : 'Iniciar sesión'}
                         </button>
 
                         <button
@@ -211,9 +270,9 @@ function LoginModal({ onClose }) {
                         <button
                             className="primary-btn"
                             onClick={handleSendVerification}
-                            disabled={!formData.name || !formData.email || !passwordValid}
+                            disabled={!formData.name || !formData.email || !passwordValid || loading}
                         >
-                            Crear cuenta
+                            {loading ? 'Enviando...' : 'Crear cuenta'}
                         </button>
 
                         <button
@@ -222,19 +281,13 @@ function LoginModal({ onClose }) {
                         >
                             ← Volver
                         </button>
-
-                        <p className="terms-text">
-                            Al crear una cuenta, aceptas nuestro{' '}
-                            <a href="#terms">aviso de privacidad</a> y los{' '}
-                            <a href="#terms">términos de uso</a>.
-                        </p>
                     </div>
                 )}
 
                 {step === 'verify' && (
                     <div className="verify-step">
-                        <h3>Se enviará un código de verificación a tu correo</h3>
-                        <p className="verify-subtitle">Por favor ingresa el código</p>
+                        <h3>Se envió un código de verificación a tu correo</h3>
+                        <p className="verify-subtitle">Por favor ingrésalo aquí</p>
 
                         <div className="code-inputs">
                             {[0, 1, 2, 3].map((index) => (
@@ -253,16 +306,10 @@ function LoginModal({ onClose }) {
                         <button
                             className="primary-btn"
                             onClick={handleVerifyCode}
-                            disabled={verificationCode.join('').length < 4}
+                            disabled={verificationCode.join('').length < 4 || loading}
                         >
-                            Verificar
+                            {loading ? 'Verificando...' : 'Verificar'}
                         </button>
-
-                        <p className="resend-text">
-                            Al crear una cuenta, aceptas nuestro{' '}
-                            <a href="#terms">aviso de privacidad</a> y los{' '}
-                            <a href="#terms">términos de uso</a>.
-                        </p>
                     </div>
                 )}
             </div>

@@ -3,9 +3,9 @@ from rest_framework import status
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from backend.itinerarios.models import Itinerario, ProveedorAPI, DetalleItinerario
-from backend.itinerarios.serializers import ItinerarioSerializer
-from backend.itinerarios.apis import buscar_vuelos, buscar_hoteles
+from .models import Itinerario, ProveedorAPI, DetalleItinerario
+from .serializers import ItinerarioSerializer
+from .apis import buscar_vuelos, buscar_hoteles
 
 class CrearItinerarioView(APIView):
     permission_classes = [IsAuthenticated]
