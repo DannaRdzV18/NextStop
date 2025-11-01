@@ -5,7 +5,7 @@ BASE_URL = "http://127.0.0.1:8000/api/usuarios/registrar/"
 # Datos del usuario a registrar
 data = {
     "nombre": "Brian Mauss",
-    "email": "maussbrian06@gmail.com",
+    "email": "dannardzv@gmail.com",
     "password": "MiPassword123!",
     "telefono": "2294163258",
     "idioma_preferido": "es",

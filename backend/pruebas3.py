@@ -3,7 +3,7 @@ import requests
 BASE_URL = "http://127.0.0.1:8000/api/usuarios/login/"
 
 data = {
-    "email": "maussbrian06@gmail.com",
+    "email": "dannardzv@gmail.com",
     "password": "MiPassword123!"
 }
 
