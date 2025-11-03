@@ -1,4 +1,12 @@
 from django.db import models
+from django.utils import timezone
+from datetime import timedelta
+
+
+# 🔹 Función para evitar el error de serialización de lambdas
+def default_expiration():
+    return timezone.now() + timedelta(minutes=10)
+
 
 class Rol(models.Model):
     nombre = models.CharField(max_length=50)
@@ -16,12 +24,26 @@ class Usuario(models.Model):
     idioma_preferido = models.CharField(max_length=10, default='es')
     moneda_preferida = models.CharField(max_length=10, default='MXN')
     email_verificado = models.BooleanField(default=False)
-    codigo_verificacion = models.CharField(max_length=6, blank=True, null=True)
     fecha_registro = models.DateTimeField(auto_now_add=True)
     activo = models.BooleanField(default=True)
 
     def __str__(self):
         return self.nombre
+
+
+class Verificacion(models.Model):
+    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name="verificaciones")
+    codigo = models.CharField(max_length=6)
+    token = models.CharField(max_length=100, unique=True)
+    expiracion = models.DateTimeField(default=default_expiration)  # ✅ Cambiado
+    usado = models.BooleanField(default=False)
+
+    def expirado(self):
+        return timezone.now() > self.expiracion or self.usado
+
+    def __str__(self):
+        return f"Verificación de {self.usuario.email}"
+
 
 class UsuarioRol(models.Model):
     usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE)
@@ -29,6 +51,7 @@ class UsuarioRol(models.Model):
 
     class Meta:
         unique_together = ('usuario', 'rol')
+
 
 class Sesion(models.Model):
     usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE)

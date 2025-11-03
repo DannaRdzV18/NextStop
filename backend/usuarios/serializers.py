@@ -6,11 +6,13 @@ class UsuarioSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Usuario
-        fields = ['id', 'nombre', 'email', 'telefono', 'idioma_preferido', 'moneda_preferida', 'email_verificado', 'activo', 'password_hash']
+        fields = [
+            'id', 'nombre', 'email', 'telefono', 'idioma_preferido',
+            'moneda_preferida', 'email_verificado', 'activo', 'password_hash'
+        ]
         read_only_fields = ['id', 'email_verificado', 'activo']
 
     def create(self, validated_data):
-        # Campos opcionales con valores por defecto
         validated_data.setdefault('telefono', '')
         validated_data.setdefault('idioma_preferido', 'es')
         validated_data.setdefault('moneda_preferida', 'MXN')
