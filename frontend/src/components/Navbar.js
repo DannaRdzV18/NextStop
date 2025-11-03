@@ -13,9 +13,14 @@ function Navbar() {
     useEffect(() => {
         const storedUser = localStorage.getItem('usuario');
         if (storedUser) {
-            setUsuario(JSON.parse(storedUser).usuario);
+            setUsuario(JSON.parse(storedUser));
         }
     }, []);
+
+    const handleLogin = (userData) => {
+        setUsuario(userData);
+        localStorage.setItem('usuario', JSON.stringify(userData));
+    };
 
     return (
         <>
@@ -42,18 +47,12 @@ function Navbar() {
                         <span>MXN</span>
                     </div>
 
-                    <button
-                        className="login-btn"
-                        onClick={() => setShowLoginModal(true)}
-                    >
+                    <button className="login-btn" onClick={() => setShowLoginModal(true)}>
                         <FaUser className="user-icon" />
                         {usuario ? usuario.nombre : "Iniciar sesión"}
                     </button>
 
-                    <button
-                        className="menu-btn"
-                        onClick={() => setShowMenu(!showMenu)}
-                    >
+                    <button className="menu-btn" onClick={() => setShowMenu(!showMenu)}>
                         <HiMenu className="menu-icon" />
                         Menú
                     </button>
@@ -63,7 +62,7 @@ function Navbar() {
             {showLoginModal && (
                 <LoginModal
                     onClose={() => setShowLoginModal(false)}
-                    onLogin={(userData) => setUsuario(userData)} // <-- Pasamos función al modal
+                    onLogin={handleLogin}
                 />
             )}
         </>

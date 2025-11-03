@@ -6,7 +6,7 @@ import { IoClose } from 'react-icons/io5';
 import { FaUser, FaEnvelope } from 'react-icons/fa';
 import axios from 'axios';
 
-function LoginModal({ onClose, setUsuarioLogueado }) {
+function LoginModal({ onClose, onLogin }) {
     const [step, setStep] = useState('options');
     const [formData, setFormData] = useState({
         name: '',
@@ -18,73 +18,66 @@ function LoginModal({ onClose, setUsuarioLogueado }) {
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState('');
 
-    // ⚙️ Cambia esto por la URL base de tu backend
     const API_URL = 'http://127.0.0.1:8000/api/usuarios/';
 
     // 🔹 Iniciar sesión
     const handleLogin = async () => {
-    try {
-        setLoading(true);
-        const response = await axios.post(`${API_URL}login/`, {
-            email: formData.email,
-            password: formData.password
-        });
+        try {
+            setLoading(true);
+            const response = await axios.post(`${API_URL}login/`, {
+                email: formData.email,
+                password: formData.password
+            });
 
-        setMessage('Inicio de sesión exitoso');
-        console.log('Usuario logueado:', response.data);
+            const usuarioData = response.data.usuario;
+            setMessage('Inicio de sesión exitoso ✅');
+            console.log('Usuario logueado:', usuarioData);
 
-        // Guardar en localStorage
-        localStorage.setItem('usuario', JSON.stringify(response.data));
-
-        // Actualizar estado en Navbar
-        setUsuarioLogueado(response.data.usuario); // esto actualiza el navbar
-        localStorage.setItem('usuario', JSON.stringify(response.data.usuario));
-
-
-        onClose();
-    } catch (error) {
-        console.error(error);
-        setMessage('Correo o contraseña incorrectos');
-    } finally {
-        setLoading(false);
-    }
-};
+            // ✅ Guardar en localStorage y actualizar estado global
+            localStorage.setItem('usuario', JSON.stringify(usuarioData));
+            onLogin(usuarioData);
+            onClose();
+        } catch (error) {
+            console.error(error);
+            setMessage('❌ Correo o contraseña incorrectos');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     // 🔹 Registrar usuario y enviar código
     const handleSendVerification = async () => {
-    try {
-        const payload = {
-            nombre: formData.name,
-            email: formData.email,
-            password: formData.password,
-            recaptcha_token: 'fake-token' // mientras pruebas
-        };
+        try {
+            const payload = {
+                nombre: formData.name,
+                email: formData.email,
+                password: formData.password,
+                recaptcha_token: 'fake-token'
+            };
 
-        const response = await axios.post('http://127.0.0.1:8000/api/usuarios/registrar/', payload);
-        console.log(response.data);
-        setStep('verify');
-    } catch (error) {
-        console.error(error);
-        alert(error.response?.data?.error || "Error al registrar usuario");
-    }
-};
+            await axios.post(`${API_URL}registrar/`, payload);
+            setStep('verify');
+        } catch (error) {
+            console.error(error);
+            alert(error.response?.data?.error || "Error al registrar usuario");
+        }
+    };
 
     // 🔹 Verificar código
     const handleVerifyCode = async () => {
         const code = verificationCode.join('');
         try {
             setLoading(true);
-            const response = await axios.post(`${API_URL}verificar/`, {
+            await axios.post(`${API_URL}verificar/`, {
                 email: formData.email,
                 codigo: code
             });
 
-            console.log('Verificación exitosa:', response.data);
-            setMessage('Cuenta verificada correctamente');
-            onClose();
+            setMessage('Cuenta verificada correctamente ✅');
+            setTimeout(() => setStep('login'), 1500);
         } catch (error) {
             console.error(error);
-            setMessage('Código inválido o expirado');
+            setMessage('Código inválido o expirado ❌');
         } finally {
             setLoading(false);
         }
@@ -95,7 +88,6 @@ function LoginModal({ onClose, setUsuarioLogueado }) {
             const newCode = [...verificationCode];
             newCode[index] = value;
             setVerificationCode(newCode);
-
             if (value && index < 3) {
                 document.getElementById(`code-${index + 1}`).focus();
             }
@@ -131,17 +123,11 @@ function LoginModal({ onClose, setUsuarioLogueado }) {
                     <div className="options-step">
                         <h3>Accede para crear itinerarios</h3>
 
-                        <button
-                            className="primary-btn"
-                            onClick={() => setStep('login')}
-                        >
+                        <button className="primary-btn" onClick={() => setStep('login')}>
                             <FaUser /> Iniciar sesión
                         </button>
 
-                        <button
-                            className="secondary-btn"
-                            onClick={() => setStep('register')}
-                        >
+                        <button className="secondary-btn" onClick={() => setStep('register')}>
                             <FaEnvelope /> Crear cuenta
                         </button>
 
@@ -196,10 +182,7 @@ function LoginModal({ onClose, setUsuarioLogueado }) {
                             {loading ? 'Cargando...' : 'Iniciar sesión'}
                         </button>
 
-                        <button
-                            className="text-btn"
-                            onClick={() => setStep('options')}
-                        >
+                        <button className="text-btn" onClick={() => setStep('options')}>
                             ← Volver
                         </button>
                     </div>
@@ -275,10 +258,7 @@ function LoginModal({ onClose, setUsuarioLogueado }) {
                             {loading ? 'Enviando...' : 'Crear cuenta'}
                         </button>
 
-                        <button
-                            className="text-btn"
-                            onClick={() => setStep('options')}
-                        >
+                        <button className="text-btn" onClick={() => setStep('options')}>
                             ← Volver
                         </button>
                     </div>
