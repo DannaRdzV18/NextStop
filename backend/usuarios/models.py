@@ -33,9 +33,9 @@ class Usuario(models.Model):
 
 class Verificacion(models.Model):
     usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name="verificaciones")
-    codigo = models.CharField(max_length=6)
+    codigo = models.CharField(max_length=4)
     token = models.CharField(max_length=100, unique=True)
-    expiracion = models.DateTimeField(default=default_expiration)  # ✅ Cambiado
+    expiracion = models.DateTimeField(default=default_expiration)
     usado = models.BooleanField(default=False)
 
     def expirado(self):
