@@ -1,25 +1,50 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './Navbar.css';
 import LoginModal from './LoginModal';
 import logo from '../assets/images/logo_nextstop.png';
 import { FaUser } from 'react-icons/fa';
 import { HiMenu } from 'react-icons/hi';
+import { Link } from 'react-router-dom';
 
 function Navbar() {
     const [showLoginModal, setShowLoginModal] = useState(false);
     const [showMenu, setShowMenu] = useState(false);
+    const [showUserMenu, setShowUserMenu] = useState(false);
     const [usuario, setUsuario] = useState(null);
+
+    const menuRef = useRef(null);
+    const userMenuRef = useRef(null);
 
     useEffect(() => {
         const storedUser = localStorage.getItem('usuario');
         if (storedUser) {
             setUsuario(JSON.parse(storedUser));
         }
+
+        // Cerrar menús al hacer clic fuera
+        const handleClickOutside = (event) => {
+            if (
+                menuRef.current && !menuRef.current.contains(event.target) &&
+                userMenuRef.current && !userMenuRef.current.contains(event.target)
+            ) {
+                setShowMenu(false);
+                setShowUserMenu(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
     const handleLogin = (userData) => {
         setUsuario(userData);
         localStorage.setItem('usuario', JSON.stringify(userData));
+    };
+
+    const handleLogout = () => {
+        localStorage.removeItem('usuario');
+        setUsuario(null);
+        setShowUserMenu(false);
     };
 
     return (
@@ -47,15 +72,47 @@ function Navbar() {
                         <span>MXN</span>
                     </div>
 
-                    <button className="login-btn" onClick={() => setShowLoginModal(true)}>
-                        <FaUser className="user-icon" />
-                        {usuario ? usuario.nombre : "Iniciar sesión"}
-                    </button>
+                    {/* Botón de usuario */}
+                    <div className="dropdown" ref={userMenuRef}>
+                        <button
+                            className="login-btn"
+                            onClick={() => {
+                                if (usuario) {
+                                    setShowUserMenu(!showUserMenu);
+                                } else {
+                                    setShowLoginModal(true);
+                                }
+                            }}
+                        >
+                            <FaUser className="user-icon" />
+                            {usuario ? usuario.nombre : "Iniciar sesión"}
+                        </button>
 
-                    <button className="menu-btn" onClick={() => setShowMenu(!showMenu)}>
-                        <HiMenu className="menu-icon" />
-                        Menú
-                    </button>
+                        {showUserMenu && usuario && (
+                            <div className="dropdown-menu">
+                                <button onClick={handleLogout}>Cerrar sesión</button>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Botón de menú principal */}
+                    <div className="dropdown" ref={menuRef}>
+                        <button className="menu-btn" onClick={() => setShowMenu(!showMenu)}>
+                            <HiMenu className="menu-icon" />
+                            Menú
+                        </button>
+
+                        {showMenu && (
+                            <div className="dropdown-menu">
+                                <Link to="/itinerarios" onClick={() => setShowMenu(false)}>
+                                    Itinerarios creados
+                                </Link>
+                                <Link to="/soporte" onClick={() => setShowMenu(false)}>
+                                    Contactar a soporte
+                                </Link>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </nav>
 
