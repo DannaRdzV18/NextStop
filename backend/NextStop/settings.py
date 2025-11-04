@@ -125,7 +125,10 @@ TIME_ZONE = 'America/Mexico_City'
 
 USE_I18N = True
 
-USE_TZ = True
+USE_TZ = False
+
+DATETIME_FORMAT = 'd/m/Y H:i:s'
+DATE_FORMAT = 'd/m/Y'
 
 
 # Static files (CSS, JavaScript, Images)
