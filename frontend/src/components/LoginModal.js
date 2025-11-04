@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './LoginModal.css';
 import logo from '../assets/images/logo_nextstop.png';
 import { AiFillEye, AiFillEyeInvisible } from 'react-icons/ai';
@@ -18,7 +18,20 @@ function LoginModal({ onClose, onLogin }) {
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState('');
 
+    // ⏱️ Nuevos estados para contador y reenvío
+    const [contador, setContador] = useState(0);
+    const [reenviando, setReenviando] = useState(false);
+
     const API_URL = 'http://127.0.0.1:8000/api/usuarios/';
+
+    // 🔹 Efecto del contador
+    useEffect(() => {
+        let timer;
+        if (step === 'verify' && contador > 0) {
+            timer = setTimeout(() => setContador(contador - 1), 1000);
+        }
+        return () => clearTimeout(timer);
+    }, [contador, step]);
 
     // 🔹 Iniciar sesión
     const handleLogin = async () => {
@@ -33,7 +46,6 @@ function LoginModal({ onClose, onLogin }) {
             setMessage('Inicio de sesión exitoso ✅');
             console.log('Usuario logueado:', usuarioData);
 
-            // ✅ Guardar en localStorage y actualizar estado global
             localStorage.setItem('usuario', JSON.stringify(usuarioData));
             onLogin(usuarioData);
             onClose();
@@ -57,6 +69,7 @@ function LoginModal({ onClose, onLogin }) {
 
             await axios.post(`${API_URL}registrar/`, payload);
             setStep('verify');
+            setContador(30); // 10 minutos
         } catch (error) {
             console.error(error);
             alert(error.response?.data?.error || "Error al registrar usuario");
@@ -82,6 +95,29 @@ function LoginModal({ onClose, onLogin }) {
             setLoading(false);
         }
     };
+
+    // 🔁 Reenviar código de verificación
+    const handleReenviarCodigo = async () => {
+    if (contador > 0 || reenviando) return; // evita spam de clicks
+    setReenviando(true);
+    setMessage('');
+
+    try {
+        const response = await axios.post(`${API_URL}reenviar-codigo/`, {
+            email: formData.email
+        });
+
+        setMessage('📨 Se ha reenviado el código de verificación a tu correo.');
+        setContador(30); // reinicia el contador (10 minutos)
+        console.log('Respuesta del backend:', response.data);
+    } catch (error) {
+        console.error('Error al reenviar código:', error);
+        setMessage(error.response?.data?.error || '❌ Error al reenviar el código.');
+    } finally {
+        setReenviando(false);
+    }
+};
+
 
     const handleCodeInput = (index, value) => {
         if (value.length <= 1 && /^\d*$/.test(value)) {
@@ -290,6 +326,23 @@ function LoginModal({ onClose, onLogin }) {
                         >
                             {loading ? 'Verificando...' : 'Verificar'}
                         </button>
+
+                        <div className="resend-container">
+                            {contador > 0 ? (
+                                <p className="resend-timer">
+                                    Puedes reenviar el código en {Math.floor(contador / 60)}:
+                                    {(contador % 60).toString().padStart(2, '0')} min
+                                </p>
+                            ) : (
+                                <button
+                                    className="secondary-btn"
+                                    onClick={handleReenviarCodigo}
+                                    disabled={reenviando}
+                                >
+                                    {reenviando ? 'Reenviando...' : 'Reenviar código'}
+                                </button>
+                            )}
+                        </div>
                     </div>
                 )}
             </div>

@@ -1,11 +1,12 @@
 from django.urls import path
 from .Views.registro_view import RegistroUsuarioView
-from .Views.verificar_view import VerificarCorreoView, VerificarLinkView
+from .Views.verificar_view import VerificarCorreoView, VerificarLinkView, ReenviarVerificacionView
 from .Views.login_view import LoginUsuarioView
 
 urlpatterns = [
     path('registrar/', RegistroUsuarioView.as_view(), name='registrar_usuario'),
     path('verificar/', VerificarCorreoView.as_view(), name='verificar_correo'),
     path('verificar-link/<str:token>/', VerificarLinkView.as_view(), name='verificar_link'),
+    path('reenviar-codigo/', ReenviarVerificacionView.as_view(), name='reenviar_codigo'),
     path('login/', LoginUsuarioView.as_view(), name='login_usuario'),
 ]

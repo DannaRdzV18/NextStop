@@ -72,7 +72,7 @@ class ReenviarVerificacionView(APIView):
         )
 
         link_verificacion = f"http://localhost:3000/verificar?token={token}"
-        tiempo = 10
+        tiempo = .5
 
         mensaje = f"""
 ✉️ Asunto: Verifica tu cuenta en NextStop
@@ -85,7 +85,7 @@ Utiliza el siguiente código o haz clic en el enlace para completar la verificac
 🔢 Código de verificación: {codigo}
 🔗 Enlace de verificación: {link_verificacion}
 
-Por motivos de seguridad, este código y enlace expirarán en {tiempo} minutos.
+Por motivos de seguridad, este código y enlace expirarán en {tiempo} segundos.
 """
 
         send_mail(
