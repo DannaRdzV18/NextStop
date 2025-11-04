@@ -8,6 +8,9 @@ from django.core.mail import send_mail
 from django.conf import settings
 
 class VerificarCorreoView(APIView):
+    """
+        Endpoint para verificar el correo del usuario mediante código o token.
+        """
     permission_classes = [AllowAny]
 
     def post(self, request):

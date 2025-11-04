@@ -7,6 +7,9 @@ from apis_externas.services.amadeus_flights import buscar_vuelos
 from apis_externas.services.amadeus_hotels import buscar_hoteles
 
 class GenerarItinerarioView(APIView):
+    """
+        Endpoint para generar itinerario completo.
+        """
     permission_classes = [IsAuthenticated]
 
     def post(self, request):

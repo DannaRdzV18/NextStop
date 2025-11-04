@@ -5,6 +5,10 @@ from ..models import Itinerario, ProveedorAPI, DetalleItinerario
 from apis_externas.services.amadeus_flights import buscar_vuelos
 
 class VuelosView(APIView):
+    """
+        Buscar vuelos entre origen y destino.
+
+        """
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
