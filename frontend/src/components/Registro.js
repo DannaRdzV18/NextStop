@@ -29,7 +29,6 @@ function Registro() {
       });
       setMensaje(response.data.mensaje || 'Se envió un correo de verificación.');
       setError('');
-      setContador(30); // ⏳ 10 minutos
     } catch (err) {
       console.error(err.response?.data);
       setError(err.response?.data?.error || 'Error al registrar');

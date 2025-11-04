@@ -1,36 +1,32 @@
-.verificacion-enlace-container {
+.verificacion-container {
   display: flex;
   justify-content: center;
   align-items: center;
   height: 100vh;
   background-color: #f9fafb;
-  font-family: 'Poppins', sans-serif;
 }
 
-.verificacion-enlace-card {
+.verificacion-card {
   background: white;
-  padding: 50px 40px;
+  padding: 40px;
   border-radius: 20px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
   text-align: center;
-  max-width: 420px;
+  max-width: 400px;
   width: 90%;
-  transition: all 0.3s ease;
 }
 
-.verificacion-enlace-card h2 {
-  color: #2c3e50;
-  font-size: 1.8em;
+.verificacion-card h2 {
+  color: #c0392b;
   margin-bottom: 15px;
 }
 
-.verificacion-enlace-card p {
+.verificacion-card p {
   color: #555;
-  margin-bottom: 30px;
-  line-height: 1.5;
+  margin-bottom: 25px;
 }
 
-.verificacion-enlace-card button {
+.verificacion-card button {
   background-color: #7A9B5E;
   color: white;
   border: none;
@@ -38,30 +34,9 @@
   padding: 12px 25px;
   cursor: pointer;
   font-size: 1em;
-  font-weight: 500;
-  transition: background-color 0.3s, transform 0.2s;
+  transition: background-color 0.3s;
 }
 
-.verificacion-enlace-card button:hover {
+.verificacion-card button:hover {
   background-color: #6a8a4e;
-  transform: scale(1.03);
-}
-
-.verificacion-enlace-icon {
-  font-size: 3.5em;
-  margin-bottom: 20px;
-}
-
-.verificacion-exito {
-  color: #27ae60;
-}
-
-.verificacion-error {
-  color: #e74c3c;
-}
-
-.verificando-texto {
-  color: #7f8c8d;
-  font-size: 1.1em;
-  text-align: center;
 }

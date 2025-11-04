@@ -4,7 +4,7 @@ import Home from './pages/Home';
 import Registro from './components/Registro';
 import Verificar from './components/Verificar';
 import Login from './components/Login';
-import VerificacionEnlace from './components/VerificacionEnlace'; // 👈 importar nuevo componente
+import VerificacionEnlace from './components/VerificacionEnlace';
 import VerificacionCodigo from './components/VerificacionCodigo';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
@@ -17,10 +17,11 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/registro" element={<Registro />} />
           <Route path="/verificar" element={<Verificar />} />
-          <Route path="/verificar-codigo" element={<VerificacionCodigo />} />
-          <Route path="/verificar-enlace" element={<VerificacionEnlace />} /> {/* 👈 nueva ruta */}
           <Route path="/login" element={<Login />} />
-          
+
+          {/* Nuevas rutas */}
+          <Route path="/verificar-enlace" element={<VerificacionEnlace />} />
+          <Route path="/verificar-codigo" element={<VerificacionCodigo />} />
         </Routes>
       </div>
     </Router>
