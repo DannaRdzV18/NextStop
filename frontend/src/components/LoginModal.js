@@ -11,8 +11,12 @@ function LoginModal({ onClose, onLogin }) {
     const [formData, setFormData] = useState({
         name: '',
         email: '',
-        password: ''
+        password: '',
+        phone: '',
+        language: '',
+        currency: ''
     });
+
     const [verificationCode, setVerificationCode] = useState(['', '', '', '']);
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -64,6 +68,9 @@ function LoginModal({ onClose, onLogin }) {
                 nombre: formData.name,
                 email: formData.email,
                 password: formData.password,
+                telefono: formData.phone,
+                idioma: formData.language,
+                moneda: formData.currency,
                 recaptcha_token: 'fake-token'
             };
 
@@ -98,26 +105,25 @@ function LoginModal({ onClose, onLogin }) {
 
     // 🔁 Reenviar código de verificación
     const handleReenviarCodigo = async () => {
-    if (contador > 0 || reenviando) return; // evita spam de clicks
-    setReenviando(true);
-    setMessage('');
+        if (contador > 0 || reenviando) return; // evita spam de clicks
+        setReenviando(true);
+        setMessage('');
 
-    try {
-        const response = await axios.post(`${API_URL}reenviar-codigo/`, {
-            email: formData.email
-        });
+        try {
+            const response = await axios.post(`${API_URL}reenviar-codigo/`, {
+                email: formData.email
+            });
 
-        setMessage('📨 Se ha reenviado el código de verificación a tu correo.');
-        setContador(30); // reinicia el contador (10 minutos)
-        console.log('Respuesta del backend:', response.data);
-    } catch (error) {
-        console.error('Error al reenviar código:', error);
-        setMessage(error.response?.data?.error || '❌ Error al reenviar el código.');
-    } finally {
-        setReenviando(false);
-    }
-};
-
+            setMessage('📨 Se ha reenviado el código de verificación a tu correo.');
+            setContador(30); // reinicia el contador (10 minutos)
+            console.log('Respuesta del backend:', response.data);
+        } catch (error) {
+            console.error('Error al reenviar código:', error);
+            setMessage(error.response?.data?.error || '❌ Error al reenviar el código.');
+        } finally {
+            setReenviando(false);
+        }
+    };
 
     const handleCodeInput = (index, value) => {
         if (value.length <= 1 && /^\d*$/.test(value)) {
@@ -286,10 +292,74 @@ function LoginModal({ onClose, onLogin }) {
                             </div>
                         </div>
 
+                        {/* Nuevos campos */}
+                        <div className="input-group">
+                            <label>Número de celular</label>
+                            <input
+                                type="tel"
+                                value={formData.phone}
+                                onChange={(e) => handleInputChange('phone', e.target.value)}
+                                className="email-input"
+                                placeholder="10 dígitos"
+                                pattern="[0-9]{10}"
+                                title="Debe contener 10 dígitos"
+                                required
+                            />
+                        </div>
+
+                        <div className="input-group">
+                            <label>Idioma</label>
+                            <select
+                                value={formData.language}
+                                onChange={(e) => handleInputChange('language', e.target.value)}
+                                className="email-input"
+                                required
+                            >
+                                <option value="">Selecciona idioma</option>
+                                <option value="es">Español</option>
+                                <option value="en">Inglés</option>
+                                <option value="fr">Francés</option>
+                            </select>
+                        </div>
+
+                        <div className="input-group">
+                            <label>Moneda</label>
+                            <select
+                                value={formData.currency}
+                                onChange={(e) => handleInputChange('currency', e.target.value)}
+                                className="email-input"
+                                required
+                            >
+                                <option value="">Selecciona moneda</option>
+                                <option value="MXN">Pesos Mexicanos (MXN)</option>
+                                <option value="USD">Dólares (USD)</option>
+                                <option value="EUR">Euros (EUR)</option>
+                            </select>
+                        </div>
+
+                        {/* Captcha placeholder */}
+                        <div style={{
+                            margin: '10px 0',
+                            border: '1px dashed gray',
+                            borderRadius: '10px',
+                            padding: '15px',
+                            textAlign: 'center'
+                        }}>
+                            <p style={{ margin: 0, color: '#7f8c8d' }}>Aquí irá el Captcha</p>
+                        </div>
+
                         <button
                             className="primary-btn"
                             onClick={handleSendVerification}
-                            disabled={!formData.name || !formData.email || !passwordValid || loading}
+                            disabled={
+                                !formData.name ||
+                                !formData.email ||
+                                !formData.phone ||
+                                !formData.language ||
+                                !formData.currency ||
+                                !passwordValid ||
+                                loading
+                            }
                         >
                             {loading ? 'Enviando...' : 'Crear cuenta'}
                         </button>
