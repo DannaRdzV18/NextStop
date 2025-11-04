@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from .models import Itinerario, ProveedorAPI, DetalleItinerario
 from .serializers import ItinerarioSerializer
-from .apis import buscar_vuelos, buscar_hoteles
+from .apis import buscar_vuelos
 
 class CrearItinerarioView(APIView):
     permission_classes = [IsAuthenticated]
