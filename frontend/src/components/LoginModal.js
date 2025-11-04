@@ -22,7 +22,7 @@ function LoginModal({ onClose, onLogin }) {
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState('');
 
-    // ⏱️ Nuevos estados para contador y reenvío
+    // ⏱️ Nuevos estaados para contador y reenvío
     const [contador, setContador] = useState(0);
     const [reenviando, setReenviando] = useState(false);
 
