@@ -1,0 +1,44 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: nextstop_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: 2NJECc5R0jiB4d
+      MYSQL_DATABASE: NextStop
+      MYSQL_USER: brian
+      MYSQL_PASSWORD: 3aFW3e1Va50cou
+    ports:
+      - "3307:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+
+  backend:
+    build: ./backend
+    container_name: nextstop_backend
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      - DB_HOST=db
+      - DB_NAME=nextstop
+      - DB_USER=brian
+      - DB_PASSWORD=3aFW3e1Va50cou
+      - DEBUG=True
+
+  frontend:
+    build: ./frontend
+    container_name: nextstop_frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+    depends_on:
+      - backend
+
+volumes:
+  db_data:

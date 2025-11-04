@@ -1,0 +1,204 @@
+.trip-planner {
+  background-color: #D4D9B8;
+  padding: 30px;
+  border-radius: 15px;
+}
+
+.trip-title {
+  color: #5a7045;
+  font-size: 1.5em;
+  margin-bottom: 10px;
+}
+
+.trip-subtitle {
+  color: #6b7a5b;
+  margin-bottom: 25px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  color: #4a5f3a;
+  font-weight: 500;
+}
+
+.icon {
+  font-size: 1.2em;
+}
+
+.input-field {
+  width: 100%;
+  padding: 12px 15px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1em;
+  background-color: white;
+}
+
+.input-field:focus {
+  outline: 2px solid #7A9B5E;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+
+.duration-display {
+  background-color: #E8E5A8;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  text-align: center;
+  color: #4a5f3a;
+}
+
+.person-selector {
+  width: 100%;
+  padding: 12px 15px;
+  background-color: white;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: center;
+  font-weight: 500;
+}
+
+.person-selector:hover {
+  background-color: #f5f5f5;
+}
+
+.add-destination-btn {
+  width: 100%;
+  padding: 15px;
+  background-color: #7A9B5E;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  margin-top: 10px;
+}
+
+.add-destination-btn:hover {
+  background-color: #6a8a4e;
+}
+
+/* Modal de personas */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.person-modal {
+  background-color: white;
+  padding: 30px;
+  border-radius: 15px;
+  max-width: 500px;
+  width: 90%;
+  position: relative;
+}
+
+.close-modal-btn {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 1.5em;
+  cursor: pointer;
+  color: #999;
+}
+
+.person-modal h3 {
+  margin-bottom: 5px;
+  color: #2c3e50;
+}
+
+.modal-subtitle {
+  color: #7f8c8d;
+  margin-bottom: 20px;
+}
+
+.person-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.person-row:last-child {
+  border-bottom: none;
+}
+
+.person-info strong {
+  color: #2c3e50;
+}
+
+.person-controls {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.control-btn {
+  width: 35px;
+  height: 35px;
+  border: 2px solid #7A9B5E;
+  background-color: white;
+  border-radius: 50%;
+  font-size: 1.2em;
+  cursor: pointer;
+  color: #7A9B5E;
+  transition: all 0.3s;
+}
+
+.control-btn:hover {
+  background-color: #7A9B5E;
+  color: white;
+}
+
+.person-count {
+  font-size: 1.2em;
+  font-weight: 600;
+  min-width: 30px;
+  text-align: center;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .trip-planner {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .person-modal {
+    padding: 20px;
+  }
+  
+  .person-info strong {
+    font-size: 0.9em;
+  }
+}
