@@ -6,6 +6,9 @@ from ..models import Usuario
 from django.contrib.auth.hashers import check_password
 
 class LoginUsuarioView(APIView):
+    """
+     Endpoint para el inicio de sesión de usuarios registrados.
+     """
     permission_classes = [AllowAny]
 
     def post(self, request):

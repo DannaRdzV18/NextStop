@@ -5,6 +5,9 @@ from ..models import Itinerario, ProveedorAPI, DetalleItinerario
 from apis_externas.services.amadeus_hotels import buscar_hoteles
 
 class HotelesView(APIView):
+    """
+     Buscar hoteles en una ciudad para fechas dadas.
+     """
     permission_classes = [IsAuthenticated]
 
     def get(self, request):

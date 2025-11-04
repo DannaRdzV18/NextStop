@@ -6,6 +6,9 @@ from ..serializers import ItinerarioSerializer
 from ..models import Itinerario
 
 class CrearItinerarioView(APIView):
+    """
+        Endpoint para crear el itinerario de manera manual y epecifica.
+        """
     permission_classes = [IsAuthenticated]
 
     def post(self, request):

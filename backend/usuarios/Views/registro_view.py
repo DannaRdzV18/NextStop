@@ -11,6 +11,9 @@ from django.contrib.auth.hashers import make_password
 from ..utils import verificar_recaptcha
 
 class RegistroUsuarioView(APIView):
+    """
+       Endpoint para registrar un nuevo usuario en la plataforma NextStop.
+       """
     permission_classes = [AllowAny]
 
     def post(self, request):
