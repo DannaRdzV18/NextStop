@@ -1,100 +1,73 @@
-// src/components/Registro.js
-import React, { useState, useEffect } from 'react';
+// src/components/VerificacionEnlace.js
+import React, { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import API from '../api';
 
-function Registro() {
-  const [nombre, setNombre] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [mensaje, setMensaje] = useState('');
-  const [error, setError] = useState('');
-  const [contador, setContador] = useState(0);
-  const [reenviando, setReenviando] = useState(false);
+function VerificacionEnlace() {
+  const [estado, setEstado] = useState('verificando'); // verificando | exito | error
+  const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    let timer;
-    if (contador > 0) {
-      timer = setTimeout(() => setContador(contador - 1), 1000);
-    }
-    return () => clearTimeout(timer);
-  }, [contador]);
+    const queryParams = new URLSearchParams(location.search);
+    const token = queryParams.get('token');
 
-  const handleRegistro = async (e) => {
-    e.preventDefault();
+    if (!token) {
+      setEstado('error');
+      return;
+    }
+
+    const verificar = async () => {
+      try {
+        const response = await API.get(`api/usuarios/verificar-enlace/?token=${token}`);
+        if (response.data.exito) {
+          setEstado('exito');
+        } else {
+          setEstado('error');
+        }
+      } catch (err) {
+        console.error(err);
+        setEstado('error');
+      }
+    };
+
+    verificar();
+  }, [location.search]);
+
+  const reenviarVerificacion = async () => {
     try {
-      const response = await API.post('api/usuarios/registrar/', {
-        nombre,
-        email,
-        password,
-      });
-      setMensaje(response.data.mensaje || 'Se envió un correo de verificación.');
-      setError('');
-      setContador(600); // ⏳ 10 minutos
+      await API.post('api/usuarios/reenviar-verificacion/', { /* email opcional */ });
+      alert('Se envió un nuevo correo de verificación.');
     } catch (err) {
-      console.error(err.response?.data);
-      setError(err.response?.data?.error || 'Error al registrar');
-      setMensaje('');
+      alert('Error al reenviar el correo.');
     }
   };
 
-  const handleReenviar = async () => {
-    if (contador > 0) return;
-    setReenviando(true);
-    try {
-      await API.post('api/usuarios/reenviar-verificacion/', { email });
-      setMensaje('Se ha reenviado el correo de verificación.');
-      setContador(600); // reinicia a 10 minutos
-    } catch (err) {
-      setError('Error al reenviar el correo.');
-    } finally {
-      setReenviando(false);
-    }
-  };
+  if (estado === 'verificando') {
+    return <p>Verificando tu cuenta...</p>;
+  }
 
-  return (
-    <div className="registro-container">
-      <form onSubmit={handleRegistro}>
-        <h2>Crear cuenta</h2>
-        <input
-          type="text"
-          placeholder="Nombre"
-          value={nombre}
-          onChange={(e) => setNombre(e.target.value)}
-          required
-        />
-        <input
-          type="email"
-          placeholder="Correo electrónico"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-        <input
-          type="password"
-          placeholder="Contraseña"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-        <button type="submit">Registrarse</button>
+  if (estado === 'exito') {
+    return (
+      <div style={{ textAlign: 'center', marginTop: '50px' }}>
+        <h2>✅ Verificación exitosa</h2>
+        <p>Tu cuenta ha sido verificada correctamente.</p>
+        <button onClick={() => navigate('/')}>Ir a la página principal</button>
+      </div>
+    );
+  }
 
-        {mensaje && <p style={{ color: 'green' }}>{mensaje}</p>}
-        {error && <p style={{ color: 'red' }}>{error}</p>}
+  if (estado === 'error') {
+    return (
+      <div style={{ textAlign: 'center', marginTop: '50px' }}>
+        <h2>❌ No se pudo verificar tu cuenta</h2>
+        <p>El enlace puede haber expirado o ser inválido.</p>
+        <button onClick={reenviarVerificacion}>Reenviar verificación</button>
+      </div>
+    );
+  }
 
-        {mensaje && (
-          <div style={{ marginTop: '10px' }}>
-            {contador > 0 ? (
-              <p>Podrás reenviar el correo en {Math.floor(contador / 60)}:{(contador % 60).toString().padStart(2, '0')} minutos</p>
-            ) : (
-              <button onClick={handleReenviar} disabled={reenviando}>
-                {reenviando ? 'Reenviando...' : 'Reenviar verificación'}
-              </button>
-            )}
-          </div>
-        )}
-      </form>
-    </div>
-  );
+  return null;
 }
 
-export default Registro;
+export default VerificacionEnlace;
