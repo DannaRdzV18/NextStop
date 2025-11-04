@@ -1,4 +1,5 @@
 // src/components/VerificacionEnlace.js
+import './VerificacionEnlace.css';
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import API from '../api';
@@ -43,31 +44,34 @@ function VerificacionEnlace() {
     }
   };
 
-  if (estado === 'verificando') {
-    return <p>Verificando tu cuenta...</p>;
-  }
+  return (
+    <div className="verificacion-container">
+      <div className="verificacion-card">
+        {estado === 'verificando' && (
+          <>
+            <h2>⏳ Verificando tu cuenta...</h2>
+            <p>Por favor espera un momento.</p>
+          </>
+        )}
 
-  if (estado === 'exito') {
-    return (
-      <div style={{ textAlign: 'center', marginTop: '50px' }}>
-        <h2>✅ Verificación exitosa</h2>
-        <p>Tu cuenta ha sido verificada correctamente.</p>
-        <button onClick={() => navigate('/')}>Ir a la página principal</button>
+        {estado === 'exito' && (
+          <>
+            <h2>✅ Verificación exitosa</h2>
+            <p>Tu cuenta ha sido verificada correctamente.</p>
+            <button onClick={() => navigate('/')}>Ir a la página principal</button>
+          </>
+        )}
+
+        {estado === 'error' && (
+          <>
+            <h2>❌ No se pudo verificar tu cuenta</h2>
+            <p>El enlace puede haber expirado o ser inválido.</p>
+            <button onClick={reenviarVerificacion}>Reenviar verificación</button>
+          </>
+        )}
       </div>
-    );
-  }
-
-  if (estado === 'error') {
-    return (
-      <div style={{ textAlign: 'center', marginTop: '50px' }}>
-        <h2>❌ No se pudo verificar tu cuenta</h2>
-        <p>El enlace puede haber expirado o ser inválido.</p>
-        <button onClick={reenviarVerificacion}>Reenviar verificación</button>
-      </div>
-    );
-  }
-
-  return null;
+    </div>
+  );
 }
 
 export default VerificacionEnlace;
