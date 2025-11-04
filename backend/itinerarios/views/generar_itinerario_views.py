@@ -3,8 +3,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from ..models import Itinerario, ProveedorAPI, DetalleItinerario
 from ..serializers import ItinerarioSerializer
-from ...apis_externas.services.amadeus_flights import buscar_vuelos
-from ...apis_externas.services.amadeus_hotels import buscar_hoteles
+from apis_externas.services.amadeus_flights import buscar_vuelos
+from apis_externas.services.amadeus_hotels import buscar_hoteles
 
 class GenerarItinerarioView(APIView):
     permission_classes = [IsAuthenticated]

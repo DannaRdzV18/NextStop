@@ -3,7 +3,7 @@ from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from ..models import Itinerario, ProveedorAPI, DetalleItinerario
-from ...apis_externas.services.amadeus_activities import buscar_actividades
+from apis_externas.services.amadeus_activities import buscar_actividades
 
 class ActivitiesView(APIView):
     permission_classes = [IsAuthenticated]

@@ -2,7 +2,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from ..models import Itinerario, ProveedorAPI, DetalleItinerario
-from ...apis_externas.services.amadeus_hotels import buscar_hoteles
+from apis_externas.services.amadeus_hotels import buscar_hoteles
 
 class HotelesView(APIView):
     permission_classes = [IsAuthenticated]

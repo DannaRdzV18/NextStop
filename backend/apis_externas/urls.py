@@ -1,7 +1,12 @@
 from django.urls import path
-from apis_externas.views import VuelosAPIView, HotelesAPIView
+from itinerarios.views.vuelos_views import VuelosView
+from itinerarios.views.hoteles_views import HotelesView
+from itinerarios.views.transfers_views import TransfersView
+from itinerarios.views.activities_views import ActivitiesView
 
 urlpatterns = [
-    path("vuelos/", VuelosAPIView.as_view(), name="vuelos_api"),
-    path("hoteles/", HotelesAPIView.as_view(), name="hoteles_api"),
+    path('vuelos/', VuelosView.as_view(), name='api_vuelos'),
+    path('hoteles/', HotelesView.as_view(), name='api_hoteles'),
+    path('transfers/', TransfersView.as_view(), name='api_transfers'),
+    path('activities/', ActivitiesView.as_view(), name='api_activities'),
 ]

@@ -156,7 +156,9 @@ REST_FRAMEWORK = {
     ]
 }
 
-AMADEUS_TOKEN = "s2l0qyH0qQGwlLij7d85m1ZAi9wqwpgD"
+# Amadeus API credentials
+AMADEUS_API_KEY = "s2l0qyH0qQGwlLij7d85m1ZAi9wqwpgD"
+AMADEUS_API_SECRET = "uf8kdOOG7eXdyfEw"
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
