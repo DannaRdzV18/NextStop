@@ -156,8 +156,6 @@ REST_FRAMEWORK = {
     ]
 }
 
-RAPIDAPI_HOTELS_KEY = "f529fb8fe7msha9108b6cf9b308bp10f898jsn7cba34ab7ae9"
-RAPIDAPI_HOTELS_HOST = "hotels-com6.p.rapidapi.com"
 AMADEUS_TOKEN = "s2l0qyH0qQGwlLij7d85m1ZAi9wqwpgD"
 
 CORS_ALLOWED_ORIGINS = [
