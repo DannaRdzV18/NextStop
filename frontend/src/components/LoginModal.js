@@ -76,7 +76,7 @@ function LoginModal({ onClose, onLogin }) {
 
             await axios.post(`${API_URL}registrar/`, payload);
             setStep('verify');
-            setContador(30); // 10 minutos
+            setContador(60); // 10 minutos
         } catch (error) {
             console.error(error);
             alert(error.response?.data?.error || "Error al registrar usuario");
@@ -115,7 +115,7 @@ function LoginModal({ onClose, onLogin }) {
             });
 
             setMessage('📨 Se ha reenviado el código de verificación a tu correo.');
-            setContador(30); // reinicia el contador (10 minutos)
+            setContador(60); // reinicia el contador (10 minutos)
             console.log('Respuesta del backend:', response.data);
         } catch (error) {
             console.error('Error al reenviar código:', error);

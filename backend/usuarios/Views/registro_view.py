@@ -52,8 +52,8 @@ class RegistroUsuarioView(APIView):
             )
 
             # Construir enlace de verificación
-            link_verificacion = f"http://127.0.0.1:8000/api/usuarios/verificar-link/{token}/"
-            tiempo = .5  # minutos
+            link_verificacion = f'http://127.0.0.1:8000/api/usuarios/verificar-link/{token}/'
+            tiempo = 1  # minutos
 
             # Mensaje de correo
             mensaje = f"""
@@ -67,7 +67,7 @@ Para completar el proceso de verificación de tu cuenta, por favor utiliza el si
 🔢 Código de verificación: {codigo}
 🔗 Enlace de verificación: {link_verificacion}
 
-Por motivos de seguridad, este código y enlace expirarán en {tiempo} segundos.
+Por motivos de seguridad, este código y enlace expirarán en {tiempo} minuto.
 
 Si no solicitaste esta verificación, puedes ignorar este mensaje.
 

@@ -5,7 +5,7 @@ from datetime import timedelta
 
 # 🔹 Función para evitar el error de serialización de lambdas
 def default_expiration():
-    return timezone.now() + timedelta(seconds=30)
+    return timezone.now() + timedelta(minutes=1)
 
 
 class Rol(models.Model):

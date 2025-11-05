@@ -1,11 +1,9 @@
-import './App.css';
-import Navbar from './components/Navbar';
-import Home from './pages/Home';
+// src/App.js
 import Registro from './components/Registro';
 import Verificar from './components/Verificar';
 import Login from './components/Login';
-import VerificacionEnlace from './components/VerificacionEnlace';
-import VerificacionCodigo from './components/VerificacionCodigo';
+import Navbar from './components/Navbar';
+import Home from './pages/Home';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
 function App() {
@@ -18,10 +16,6 @@ function App() {
           <Route path="/registro" element={<Registro />} />
           <Route path="/verificar" element={<Verificar />} />
           <Route path="/login" element={<Login />} />
-
-          {/* Nuevas rutas */}
-          <Route path="/verificar-enlace" element={<VerificacionEnlace />} />
-          <Route path="/verificar-codigo" element={<VerificacionCodigo />} />
         </Routes>
       </div>
     </Router>

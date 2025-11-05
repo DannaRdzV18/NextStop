@@ -6,6 +6,7 @@ from ..models import Usuario, Verificacion
 import random, uuid
 from django.core.mail import send_mail
 from django.conf import settings
+from django.shortcuts import redirect
 
 class VerificarCorreoView(APIView):
     """
@@ -74,8 +75,8 @@ class ReenviarVerificacionView(APIView):
             token=token,
         )
 
-        link_verificacion = f"http://localhost:3000/verificar?token={token}"
-        tiempo = .5
+        link_verificacion = f'http://127.0.0.1:8000/api/usuarios/verificar-link/{token}/'
+        tiempo = 1
 
         mensaje = f"""
 ✉️ Asunto: Verifica tu cuenta en NextStop
@@ -88,7 +89,7 @@ Utiliza el siguiente código o haz clic en el enlace para completar la verificac
 🔢 Código de verificación: {codigo}
 🔗 Enlace de verificación: {link_verificacion}
 
-Por motivos de seguridad, este código y enlace expirarán en {tiempo} segundos.
+Por motivos de seguridad, este código y enlace expirarán en {tiempo} minuto.
 """
 
         send_mail(
@@ -102,7 +103,6 @@ Por motivos de seguridad, este código y enlace expirarán en {tiempo} segundos.
         return Response({'mensaje': 'Se ha reenviado el correo de verificación. Revisa tu bandeja de entrada.'},
                         status=status.HTTP_200_OK)
 
-
 class VerificarLinkView(APIView):
     permission_classes = [AllowAny]
 
@@ -110,19 +110,25 @@ class VerificarLinkView(APIView):
         try:
             verificacion = Verificacion.objects.get(token=token)
         except Verificacion.DoesNotExist:
-            return Response({"error": "Token inválido o no encontrado."},
-                            status=status.HTTP_400_BAD_REQUEST)
-
-        if verificacion.expirado():
-            return Response({"error": "El enlace de verificación ha expirado o ya fue utilizado."},
-                            status=status.HTTP_400_BAD_REQUEST)
+            # Redirige al frontend con estado "expirado"
+            return redirect("http://localhost:3000/?estado=expirado&mensaje=Token%20inválido%20o%20no%20encontrado")
 
         usuario = verificacion.usuario
+
+        # Si el correo ya estaba verificado
+        if usuario.email_verificado:
+            return redirect(f"http://localhost:3000/?estado=exito&mensaje=El%20correo%20{usuario.email}%20ya%20estaba%20verificado")
+
+        # Si está expirado
+        if verificacion.expirado():
+            verificacion.usado = True
+            verificacion.save()
+            return redirect("http://localhost:3000/?estado=expirado&mensaje=El%20enlace%20ha%20expirado%20o%20ya%20fue%20usado")
+
+        # Si es válido, marcar como verificado
         usuario.email_verificado = True
         usuario.save()
-
         verificacion.usado = True
         verificacion.save()
 
-        return Response({"mensaje": f"El correo {usuario.email} ha sido verificado exitosamente."},
-                        status=status.HTTP_200_OK)
+        return redirect(f"http://localhost:3000/?estado=exito&mensaje=El%20correo%20{usuario.email}%20ha%20sido%20verificado%20exitosamente")
