@@ -150,7 +150,7 @@ EMAIL_HOST_USER = 'nextstopcompany@gmail.com'
 EMAIL_HOST_PASSWORD = 'nunm qlcl ibjg imvf'
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
-RECAPTCHA_SECRET_KEY = '6LcqhPgrAAAAAAgW9CMLJ9VLtu8jxPG4GL5HlXaR'
+RECAPTCHA_SECRET_KEY = '6Lf_vwIsAAAAAPl0dDKUSnlAakSnL1TCefGOCLXD'
 
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',

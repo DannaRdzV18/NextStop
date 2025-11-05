@@ -4,6 +4,7 @@ import logo from '../assets/images/logo_nextstop.png';
 import { AiFillEye, AiFillEyeInvisible } from 'react-icons/ai';
 import { IoClose } from 'react-icons/io5';
 import { FaUser, FaEnvelope } from 'react-icons/fa';
+import ReCAPTCHA from "react-google-recaptcha";
 import axios from 'axios';
 
 function LoginModal({ onClose, onLogin }) {
@@ -21,14 +22,15 @@ function LoginModal({ onClose, onLogin }) {
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState('');
+    const [recaptchaToken, setRecaptchaToken] = useState(null);
 
-    // ⏱️ Nuevos estaados para contador y reenvío
+    // Estados del contador y reenvío
     const [contador, setContador] = useState(0);
     const [reenviando, setReenviando] = useState(false);
 
     const API_URL = 'http://127.0.0.1:8000/api/usuarios/';
 
-    // 🔹 Efecto del contador
+    // ⏱️ Control del contador
     useEffect(() => {
         let timer;
         if (step === 'verify' && contador > 0) {
@@ -37,20 +39,25 @@ function LoginModal({ onClose, onLogin }) {
         return () => clearTimeout(timer);
     }, [contador, step]);
 
-    // 🔹 Iniciar sesión
+        // 🔹 Iniciar sesión con reCAPTCHA
     const handleLogin = async () => {
+        if (!recaptchaToken) {
+            alert("Por favor completa el reCAPTCHA antes de continuar.");
+            return;
+        }
+
         try {
             setLoading(true);
             const response = await axios.post(`${API_URL}login/`, {
                 email: formData.email,
-                password: formData.password
+                password: formData.password,
+                recaptcha_token: recaptchaToken,
             });
 
             const usuarioData = response.data.usuario;
             setMessage('Inicio de sesión exitoso ✅');
-            console.log('Usuario logueado:', usuarioData);
-
             localStorage.setItem('usuario', JSON.stringify(usuarioData));
+
             onLogin(usuarioData);
             onClose();
         } catch (error) {
@@ -61,9 +68,15 @@ function LoginModal({ onClose, onLogin }) {
         }
     };
 
-    // 🔹 Registrar usuario y enviar código
+    // 🔹 Registrar usuario (envía correo y código)
     const handleSendVerification = async () => {
+        if (!recaptchaToken) {
+            alert("Por favor completa el reCAPTCHA antes de continuar.");
+            return;
+        }
+
         try {
+            setLoading(true);
             const payload = {
                 nombre: formData.name,
                 email: formData.email,
@@ -71,19 +84,21 @@ function LoginModal({ onClose, onLogin }) {
                 telefono: formData.phone,
                 idioma: formData.language,
                 moneda: formData.currency,
-                recaptcha_token: 'fake-token'
+                recaptcha_token: recaptchaToken
             };
 
             await axios.post(`${API_URL}registrar/`, payload);
             setStep('verify');
-            setContador(60); // 10 minutos
+            setContador(60); // 1 minuto
         } catch (error) {
             console.error(error);
             alert(error.response?.data?.error || "Error al registrar usuario");
+        } finally {
+            setLoading(false);
         }
     };
 
-    // 🔹 Verificar código
+    // 🔹 Verificar código de verificación
     const handleVerifyCode = async () => {
         const code = verificationCode.join('');
         try {
@@ -103,9 +118,9 @@ function LoginModal({ onClose, onLogin }) {
         }
     };
 
-    // 🔁 Reenviar código de verificación
+    // 🔁 Reenviar código
     const handleReenviarCodigo = async () => {
-        if (contador > 0 || reenviando) return; // evita spam de clicks
+        if (contador > 0 || reenviando) return;
         setReenviando(true);
         setMessage('');
 
@@ -115,7 +130,7 @@ function LoginModal({ onClose, onLogin }) {
             });
 
             setMessage('📨 Se ha reenviado el código de verificación a tu correo.');
-            setContador(60); // reinicia el contador (10 minutos)
+            setContador(60);
             console.log('Respuesta del backend:', response.data);
         } catch (error) {
             console.error('Error al reenviar código:', error);
@@ -125,6 +140,7 @@ function LoginModal({ onClose, onLogin }) {
         }
     };
 
+    // 🔹 Manejar los inputs del código (4 dígitos)
     const handleCodeInput = (index, value) => {
         if (value.length <= 1 && /^\d*$/.test(value)) {
             const newCode = [...verificationCode];
@@ -136,6 +152,7 @@ function LoginModal({ onClose, onLogin }) {
         }
     };
 
+    // 🔹 Actualizar campos del formulario
     const handleInputChange = (field, value) => {
         setFormData({ ...formData, [field]: value });
     };
@@ -161,6 +178,7 @@ function LoginModal({ onClose, onLogin }) {
 
                 {message && <p className="status-message">{message}</p>}
 
+                {/* === OPCIONES === */}
                 {step === 'options' && (
                     <div className="options-step">
                         <h3>Accede para crear itinerarios</h3>
@@ -181,6 +199,7 @@ function LoginModal({ onClose, onLogin }) {
                     </div>
                 )}
 
+                {/* === LOGIN === */}
                 {step === 'login' && (
                     <div className="login-step">
                         <h3>Iniciar sesión</h3>
@@ -216,12 +235,21 @@ function LoginModal({ onClose, onLogin }) {
                             </div>
                         </div>
 
+                        {/* 🧩 reCAPTCHA LOGIN */}
+                        <div style={{ margin: '15px 0', textAlign: 'center' }}>
+                            <ReCAPTCHA
+                                sitekey="6Lf_vwIsAAAAAM86ID4YEb-8OJtpMeyL7mdsRLl1"  // 👈 cambia este por tu clave de sitio
+                                onChange={(token) => setRecaptchaToken(token)}
+                                onExpired={() => setRecaptchaToken(null)}
+                            />
+                        </div>
+
                         <button
-                            className="primary-btn"
-                            onClick={handleLogin}
-                            disabled={!formData.email || !formData.password || loading}
+                        className="primary-btn"
+                        onClick={handleLogin}
+                        disabled={!formData.email || !formData.password || !recaptchaToken || loading}
                         >
-                            {loading ? 'Cargando...' : 'Iniciar sesión'}
+                        {loading ? 'Cargando...' : 'Iniciar sesión'}
                         </button>
 
                         <button className="text-btn" onClick={() => setStep('options')}>
@@ -230,6 +258,7 @@ function LoginModal({ onClose, onLogin }) {
                     </div>
                 )}
 
+                {/* === REGISTRO === */}
                 {step === 'register' && (
                     <div className="register-step">
                         <h3>Crea una contraseña para tu nueva cuenta</h3>
@@ -240,8 +269,8 @@ function LoginModal({ onClose, onLogin }) {
                                 type="text"
                                 value={formData.name}
                                 onChange={(e) => handleInputChange('name', e.target.value)}
-                                className="email-input"
                                 placeholder="Tu nombre"
+                                className="email-input"
                             />
                         </div>
 
@@ -251,8 +280,8 @@ function LoginModal({ onClose, onLogin }) {
                                 type="email"
                                 value={formData.email}
                                 onChange={(e) => handleInputChange('email', e.target.value)}
-                                className="email-input"
                                 placeholder="ejemplo@gmail.com"
+                                className="email-input"
                             />
                         </div>
 
@@ -263,8 +292,8 @@ function LoginModal({ onClose, onLogin }) {
                                     type={showPassword ? "text" : "password"}
                                     value={formData.password}
                                     onChange={(e) => handleInputChange('password', e.target.value)}
-                                    className="password-input"
                                     placeholder="••••••••••"
+                                    className="password-input"
                                 />
                                 <button
                                     type="button"
@@ -276,6 +305,7 @@ function LoginModal({ onClose, onLogin }) {
                             </div>
                         </div>
 
+                        {/* Requisitos de contraseña */}
                         <div className="password-requirements">
                             <p>La contraseña debe tener al menos:</p>
                             <div className={`requirement ${formData.password.length >= 10 ? 'valid' : ''}`}>
@@ -292,18 +322,16 @@ function LoginModal({ onClose, onLogin }) {
                             </div>
                         </div>
 
-                        {/* Nuevos campos */}
                         <div className="input-group">
                             <label>Número de celular</label>
                             <input
                                 type="tel"
                                 value={formData.phone}
                                 onChange={(e) => handleInputChange('phone', e.target.value)}
-                                className="email-input"
                                 placeholder="10 dígitos"
                                 pattern="[0-9]{10}"
                                 title="Debe contener 10 dígitos"
-                                required
+                                className="email-input"
                             />
                         </div>
 
@@ -313,7 +341,6 @@ function LoginModal({ onClose, onLogin }) {
                                 value={formData.language}
                                 onChange={(e) => handleInputChange('language', e.target.value)}
                                 className="email-input"
-                                required
                             >
                                 <option value="">Selecciona idioma</option>
                                 <option value="es">Español</option>
@@ -328,7 +355,6 @@ function LoginModal({ onClose, onLogin }) {
                                 value={formData.currency}
                                 onChange={(e) => handleInputChange('currency', e.target.value)}
                                 className="email-input"
-                                required
                             >
                                 <option value="">Selecciona moneda</option>
                                 <option value="MXN">Pesos Mexicanos (MXN)</option>
@@ -337,15 +363,13 @@ function LoginModal({ onClose, onLogin }) {
                             </select>
                         </div>
 
-                        {/* Captcha placeholder */}
-                        <div style={{
-                            margin: '10px 0',
-                            border: '1px dashed gray',
-                            borderRadius: '10px',
-                            padding: '15px',
-                            textAlign: 'center'
-                        }}>
-                            <p style={{ margin: 0, color: '#7f8c8d' }}>Aquí irá el Captcha</p>
+                        {/* 🧩 reCAPTCHA */}
+                        <div style={{ margin: '15px 0', textAlign: 'center' }}>
+                            <ReCAPTCHA
+                                sitekey="6Lf_vwIsAAAAAM86ID4YEb-8OJtpMeyL7mdsRLl1"
+                                onChange={(token) => setRecaptchaToken(token)}
+                                onExpired={() => setRecaptchaToken(null)}
+                            />
                         </div>
 
                         <button
@@ -358,6 +382,7 @@ function LoginModal({ onClose, onLogin }) {
                                 !formData.language ||
                                 !formData.currency ||
                                 !passwordValid ||
+                                !recaptchaToken ||
                                 loading
                             }
                         >
@@ -370,6 +395,7 @@ function LoginModal({ onClose, onLogin }) {
                     </div>
                 )}
 
+                {/* === VERIFICACIÓN === */}
                 {step === 'verify' && (
                     <div className="verify-step">
                         <h3>Se envió un código de verificación a tu correo</h3>
