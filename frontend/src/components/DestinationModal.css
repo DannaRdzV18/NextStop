@@ -1,0 +1,228 @@
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Fondo oscuro */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease-out;
+  overflow-y: auto;
+  padding-top: 60px; /* 💡 baja el modal un poco */
+}
+
+/* Contenedor principal */
+.destination-modal {
+  background-color: #fff;
+  padding: 30px 35px;
+  border-radius: 15px;
+  max-width: 850px;
+  width: 90%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Botón de cierre */
+.close-modal-btn {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 1.5em;
+  cursor: pointer;
+  color: #777;
+  transition: color 0.2s;
+}
+.close-modal-btn:hover { color: #5a7045; }
+
+/* Título */
+.modal-title {
+  color: #2c3e50;
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 1.5em;
+  font-weight: 600;
+}
+
+/* Contenido con scroll */
+.modal-content-scroll {
+  flex: 1;
+  overflow-y: auto;
+  margin-bottom: 20px;
+  padding-right: 10px;
+}
+
+/* Entradas */
+.destination-inputs {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.form-group label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #4a5f3a;
+  font-weight: 500;
+}
+
+.input-field {
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 1em;
+  transition: border-color 0.3s;
+}
+.input-field:focus {
+  outline: 2px solid #7A9B5E;
+  border-color: #7A9B5E;
+}
+
+/* Botones principales */
+.primary-btn, .secondary-btn {
+  padding: 12px 20px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 15px;
+  transition: all 0.3s ease;
+}
+.primary-btn {
+  background-color: #7A9B5E;
+  color: white;
+}
+.primary-btn:hover {
+  background-color: #6a8a4e;
+}
+.secondary-btn {
+  background-color: #E8E5A8;
+  color: #4a5f3a;
+}
+.secondary-btn:hover {
+  background-color: #d9d588;
+}
+
+/* Opciones */
+.options-section {
+  margin-top: 25px;
+  animation: fadeIn 0.4s ease;
+}
+.options-section h4 {
+  color: #4a5f3a;
+  margin: 25px 0 10px;
+  font-size: 1.1em;
+}
+.cards-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 15px;
+}
+.option-card {
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  transition: transform 0.3s, box-shadow 0.3s;
+  cursor: pointer;
+  overflow: hidden;
+}
+.option-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+}
+.option-image {
+  background-color: #ccc;
+  height: 100px;
+  transition: background-color 0.3s;
+}
+.option-card:hover .option-image {
+  background-color: #b8c7a1;
+}
+.option-info {
+  padding: 10px;
+  text-align: center;
+  color: #2c3e50;
+}
+.option-info strong {
+  display: block;
+  margin-bottom: 5px;
+}
+
+/* 🔹 Botones finales */
+.modal-actions {
+  position: sticky;
+  bottom: 0;
+  background-color: white;
+  padding: 20px 0;
+  border-top: 1px solid #eee;
+  box-shadow: 0 -3px 10px rgba(0, 0, 0, 0.05);
+}
+
+/* Contenedor alineado de botones */
+.destination-buttons {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+/* Estilo de los botones del bloque final */
+.destination-btn {
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  border: none;
+  transition: all 0.3s ease;
+}
+.btn-back, .btn-add {
+  background-color: #E8E5A8;
+  color: #4a5f3a;
+}
+.btn-save {
+  background-color: #7A9B5E;
+  color: white;
+}
+.btn-back:hover, .btn-add:hover {
+  background-color: #d9d68e;
+}
+.btn-save:hover {
+  background-color: #6a8a4e;
+}
+
+/* Scrollbar */
+.modal-content-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+.modal-content-scroll::-webkit-scrollbar-thumb {
+  background-color: #b0b0b0;
+  border-radius: 10px;
+}
+.modal-content-scroll::-webkit-scrollbar-thumb:hover {
+  background-color: #7A9B5E;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .destination-buttons {
+    flex-direction: column;
+  }
+  .destination-btn {
+    width: 100%;
+  }
+}
