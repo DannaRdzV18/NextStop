@@ -226,3 +226,42 @@
     width: 100%;
   }
 }
+/* 🔹 Lista de sugerencias de destinos */
+.suggestions-list {
+  list-style: none;
+  margin: 5px 0 0 0;
+  padding: 0;
+  max-height: 200px; /* limita altura */
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  z-index: 10;
+  position: absolute;
+  width: calc(100% - 30px); /* coincide con el input */
+}
+
+.suggestions-list li {
+  padding: 10px 15px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.suggestions-list li:hover {
+  background-color: #f0f3e8;
+}
+
+/* Scrollbar para la lista de sugerencias */
+.suggestions-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.suggestions-list::-webkit-scrollbar-thumb {
+  background-color: #b0b0b0;
+  border-radius: 10px;
+}
+
+.suggestions-list::-webkit-scrollbar-thumb:hover {
+  background-color: #7A9B5E;
+}

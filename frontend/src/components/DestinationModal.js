@@ -1,24 +1,70 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './DestinationModal.css';
 import { IoLocationSharp } from 'react-icons/io5';
 import { MdOutlineDirectionsTransit } from 'react-icons/md';
 
-function DestinationModal({ onClose }) {
+function DestinationModal({ onClose, addDestination }) {
   const [destination, setDestination] = useState('');
   const [days, setDays] = useState('');
   const [transport, setTransport] = useState('vuelos');
   const [showOptions, setShowOptions] = useState(false);
+  const [suggestions, setSuggestions] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  // Fetch de sugerencias cuando cambia destination
+  useEffect(() => {
+    const fetchSuggestions = async () => {
+      if (destination.length < 2) {
+        setSuggestions([]);
+        return;
+      }
+
+      setLoading(true);
+      try {
+        const response = await fetch(`http://localhost:8000/api/external/locations/?query=${destination}`);
+        if (!response.ok) throw new Error('Error al obtener sugerencias');
+
+        const data = await response.json();
+        setSuggestions(data);
+      } catch (error) {
+        console.error('Error al obtener sugerencias:', error);
+        setSuggestions([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const delayDebounce = setTimeout(fetchSuggestions, 300); // 300ms debounce
+    return () => clearTimeout(delayDebounce);
+  }, [destination]);
+
+  const handleSelectSuggestion = (item) => {
+    setDestination(item.nombre);
+    setSuggestions([]);
+  };
+
+  const handleSaveDestination = () => {
+    if (!destination || !days) return;
+
+    const newDestination = {
+      nombre: destination,
+      dias: days,
+      transporte: transport,
+    };
+
+    if (addDestination) addDestination(newDestination); // función pasada desde TripPlanner para guardar en tripData
+    setDestination('');
+    setDays('');
+    setTransport('vuelos');
+    setShowOptions(false);
+  };
 
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="destination-modal" onClick={(e) => e.stopPropagation()}>
-        {/* Botón de cierre */}
         <button className="close-modal-btn" onClick={onClose}>✕</button>
-
-        {/* Título */}
         <h3 className="modal-title">Agregar destino</h3>
 
-        {/* CONTENIDO PRINCIPAL CON SCROLL */}
         <div className="modal-content-scroll">
           {!showOptions ? (
             <div className="destination-inputs">
@@ -31,6 +77,19 @@ function DestinationModal({ onClose }) {
                   onChange={(e) => setDestination(e.target.value)}
                   className="input-field"
                 />
+                {loading && <p>Cargando...</p>}
+                {suggestions.length > 0 && (
+                  <ul className="suggestions-list">
+                    {suggestions.map((item, index) => (
+                      <li
+                        key={index}
+                        onClick={() => handleSelectSuggestion(item)}
+                      >
+                        {item.nombre} ({item.codigo})
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
 
               <div className="form-group">
@@ -62,78 +121,23 @@ function DestinationModal({ onClose }) {
             </div>
           ) : (
             <div className="options-section">
-              {transport === 'vuelos' && (
-                <>
-                  <h4>Opciones de vuelos</h4>
-                  <div className="cards-container">
-                    {[1, 2, 3].map((i) => (
-                      <div key={i} className="option-card">
-                        <div className="option-image"></div>
-                        <div className="option-info">
-                          <strong>Vuelo {i}</strong>
-                          <p>Detalles del vuelo</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              )}
-
-              {transport === 'autobuses' && (
-                <>
-                  <h4>Opciones de autobuses</h4>
-                  <div className="cards-container">
-                    {[1, 2, 3].map((i) => (
-                      <div key={i} className="option-card">
-                        <div className="option-image"></div>
-                        <div className="option-info">
-                          <strong>Autobús {i}</strong>
-                          <p>Horario y duración</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              )}
-
-              <h4>Opciones de hoteles</h4>
-              <div className="cards-container">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="option-card">
-                    <div className="option-image"></div>
-                    <div className="option-info">
-                      <strong>Hotel {i}</strong>
-                      <p>Presupuesto estimado</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <h4>Actividades</h4>
-              <div className="cards-container">
-                {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="option-card">
-                    <div className="option-image"></div>
-                    <div className="option-info">
-                      <strong>Actividad {i}</strong>
-                      <p>Descripción corta</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              {/* Aquí puedes mantener tu sección de vuelos, autobuses, hoteles y actividades */}
             </div>
           )}
         </div>
 
-        {/* BOTONES FIJOS ABAJO */}
         <div className="modal-actions">
           {showOptions ? (
             <div className="destination-buttons">
               <button className="destination-btn btn-back" onClick={() => setShowOptions(false)}>
                 Volver a la búsqueda
               </button>
-              <button className="destination-btn btn-save">Guardar destino</button>
-              <button className="destination-btn btn-add">Agregar otro destino</button>
+              <button className="destination-btn btn-save" onClick={handleSaveDestination}>
+                Guardar destino
+              </button>
+              <button className="destination-btn btn-add" onClick={handleSaveDestination}>
+                Agregar otro destino
+              </button>
             </div>
           ) : (
             <button className="secondary-btn" onClick={onClose}>

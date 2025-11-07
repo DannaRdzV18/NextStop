@@ -26,10 +26,35 @@ function TripPlanner() {
   const [showPersonModal, setShowPersonModal] = useState(false);
   const [showDestinationModal, setShowDestinationModal] = useState(false);
 
+  // 🔍 Estados para el autocompletado
+  const [originSuggestions, setOriginSuggestions] = useState([]);
+  const [isLoadingOrigin, setIsLoadingOrigin] = useState(false);
+
+  // 🧠 Maneja cambios de datos del viaje
   const handleInputChange = (field, value) => {
     setTripData({ ...tripData, [field]: value });
   };
 
+  // 🧭 Llamada a tu endpoint de ubicaciones Amadeus
+  const fetchCitySuggestions = async (query) => {
+    if (query.length < 2) {
+      setOriginSuggestions([]);
+      return;
+    }
+
+    try {
+      setIsLoadingOrigin(true);
+      const response = await fetch(`http://localhost:8000/api/external/locations/?query=${query}`);
+      const data = await response.json();
+      setOriginSuggestions(data);
+    } catch (error) {
+      console.error('Error al obtener sugerencias:', error);
+    } finally {
+      setIsLoadingOrigin(false);
+    }
+  };
+
+  // 📅 Calcula duración del viaje
   const calculateDuration = () => {
     if (tripData.departureDate && tripData.returnDate) {
       const start = new Date(tripData.departureDate);
@@ -47,19 +72,48 @@ function TripPlanner() {
       <h3 className="trip-title">Crea y planea tu viaje</h3>
       <p className="trip-subtitle">Comencemos con los datos básicos de tu viaje</p>
 
-      {/* Origen */}
+      {/* Origen con autocompletado */}
       <div className="form-group">
         <label>
           <IoLocationSharp className="icon" />
           ¿Desde dónde inicias tu viaje?
         </label>
-        <input
-          type="text"
-          placeholder="Escribe tu ciudad de origen..."
-          value={tripData.origin}
-          onChange={(e) => handleInputChange('origin', e.target.value)}
-          className="input-field"
-        />
+
+        <div className="autocomplete-wrapper">
+          <input
+            type="text"
+            placeholder="Escribe tu ciudad de origen..."
+            value={tripData.origin}
+            onChange={(e) => {
+              const value = e.target.value;
+              handleInputChange('origin', value);
+              fetchCitySuggestions(value);
+            }}
+            className="input-field"
+          />
+
+          {/* Lista de sugerencias */}
+          {originSuggestions.length > 0 && (
+            <ul className="suggestions-list">
+              {originSuggestions.map((sug, index) => (
+                <li
+                  key={index}
+                  onClick={() => {
+                    handleInputChange('origin', sug.nombre);
+                    setOriginSuggestions([]);
+                  }}
+                  className="suggestion-item"
+                >
+                  {sug.nombre} ({sug.codigo})
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {isLoadingOrigin && (
+            <div className="loading-text">Buscando...</div>
+          )}
+        </div>
       </div>
 
       {/* Fechas */}
@@ -176,7 +230,9 @@ function TripPlanner() {
                 </button>
                 <span className="person-count">{tripData.adults}</span>
                 <button
-                  onClick={() => handleInputChange('adults', tripData.adults + 1)}
+                  onClick={() =>
+                    handleInputChange('adults', tripData.adults + 1)
+                  }
                   className="control-btn"
                 >
                   +
@@ -200,7 +256,9 @@ function TripPlanner() {
                 </button>
                 <span className="person-count">{tripData.seniors}</span>
                 <button
-                  onClick={() => handleInputChange('seniors', tripData.seniors + 1)}
+                  onClick={() =>
+                    handleInputChange('seniors', tripData.seniors + 1)
+                  }
                   className="control-btn"
                 >
                   +
@@ -224,7 +282,9 @@ function TripPlanner() {
                 </button>
                 <span className="person-count">{tripData.children}</span>
                 <button
-                  onClick={() => handleInputChange('children', tripData.children + 1)}
+                  onClick={() =>
+                    handleInputChange('children', tripData.children + 1)
+                  }
                   className="control-btn"
                 >
                   +
