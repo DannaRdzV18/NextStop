@@ -53,7 +53,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',  # debe ir arriba de CommonMiddleware
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -142,6 +142,9 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# ==========================
+# 📧 Configuración de correo
+# ==========================
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
@@ -150,29 +153,37 @@ EMAIL_HOST_USER = 'nextstopcompany@gmail.com'
 EMAIL_HOST_PASSWORD = 'nunm qlcl ibjg imvf'
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
+# ==========================
+# 🔐 Seguridad y APIs
+# ==========================
 RECAPTCHA_SECRET_KEY = '6Lf_vwIsAAAAAPl0dDKUSnlAakSnL1TCefGOCLXD'
 
-REST_FRAMEWORK = {
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 10,  # 10 itinerarios por página
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
-    ]
-}
-
-# Amadeus API credentials
+# ==========================
+# 🌍 Amadeus API
+# ==========================
 AMADEUS_API_KEY = "5ao5QP3qAFX16rsSQdPI69oVGNyNpEDT"
 AMADEUS_API_SECRET = "QrEevsQw1aJvdP9n"
 
-CORS_ALLOWED_ORIGINS = [
+# ==========================
+# 🌐 CORS y CSRF
+# ==========================
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+
+CSRF_TRUSTED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
 ]
 
-CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOW_ALL_ORIGINS = True
-
+# ==========================
+# ⚙ DRF + Esquemas
+# ==========================
 REST_FRAMEWORK = {
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 10,  # 10 itinerarios por página
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.AllowAny',  # Permitir acceso a las APIs externas
+    ],
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 

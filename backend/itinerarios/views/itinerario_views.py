@@ -1,4 +1,4 @@
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
@@ -9,7 +9,7 @@ class CrearItinerarioView(APIView):
     """
         Endpoint para crear el itinerario de manera manual y epecifica.
         """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def post(self, request):
         serializer = ItinerarioSerializer(data=request.data)
@@ -20,7 +20,7 @@ class CrearItinerarioView(APIView):
 
 
 class ListarItinerariosView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def get(self, request):
         itinerarios = Itinerario.objects.filter(usuario=request.user)

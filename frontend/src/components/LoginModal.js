@@ -30,7 +30,7 @@ function LoginModal({ onClose, onLogin }) {
 
     const API_URL = 'http://127.0.0.1:8000/api/usuarios/';
 
-    // ⏱️ Control del contador
+    // ⏱ Control del contador
     useEffect(() => {
         let timer;
         if (step === 'verify' && contador > 0) {

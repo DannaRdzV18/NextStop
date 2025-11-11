@@ -1,4 +1,4 @@
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from ..models import Itinerario, ProveedorAPI, DetalleItinerario
@@ -9,7 +9,7 @@ class VuelosView(APIView):
         Buscar vuelos entre origen y destino.
 
         """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def get(self, request):
         origen = request.query_params.get("origen")

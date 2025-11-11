@@ -1,4 +1,4 @@
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from ..models import Itinerario, ProveedorAPI, DetalleItinerario
@@ -19,7 +19,7 @@ class GenerarItinerarioView(APIView):
     Genera un itinerario completo con vuelos, hoteles, actividades y traslados.
     Soporta tipo_transporte: 'vuelo' o 'terrestre'.
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def post(self, request):
         data = request.data

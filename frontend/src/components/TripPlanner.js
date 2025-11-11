@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './TripPlanner.css';
 import DatePicker from 'react-datepicker';
 import { registerLocale } from 'react-datepicker';
@@ -7,7 +7,7 @@ import 'react-datepicker/dist/react-datepicker.css';
 import { IoLocationSharp, IoPeople } from 'react-icons/io5';
 import { MdCalendarToday } from 'react-icons/md';
 import { RiMoneyDollarCircleFill } from 'react-icons/ri';
-import DestinationModal from './DestinationModal'; // ✅ Importación del modal
+import DestinationModal from './DestinationModal';
 
 registerLocale('es', es);
 
@@ -26,22 +26,41 @@ function TripPlanner() {
   const [showPersonModal, setShowPersonModal] = useState(false);
   const [showDestinationModal, setShowDestinationModal] = useState(false);
 
-  // 🔍 Estados para el autocompletado
   const [originSuggestions, setOriginSuggestions] = useState([]);
   const [isLoadingOrigin, setIsLoadingOrigin] = useState(false);
 
-  // 🧠 Maneja cambios de datos del viaje
+  const addDestination = (nuevoDestino) => {
+  setTripData((prev) => ({
+    ...prev,
+    destinos: [...(prev.destinos || []), nuevoDestino]
+  }));
+};
+
+  // 🔹 Estado de sesión React-friendly
+  const [usuario, setUsuario] = useState(() => {
+    const storedUser = localStorage.getItem('usuario');
+    return storedUser ? JSON.parse(storedUser) : null;
+  });
+
+  // 🔹 Listener de localStorage para sincronizar entre pestañas
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const storedUser = localStorage.getItem('usuario');
+      setUsuario(storedUser ? JSON.parse(storedUser) : null);
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
   const handleInputChange = (field, value) => {
     setTripData({ ...tripData, [field]: value });
   };
 
-  // 🧭 Llamada a tu endpoint de ubicaciones Amadeus
   const fetchCitySuggestions = async (query) => {
     if (query.length < 2) {
       setOriginSuggestions([]);
       return;
     }
-
     try {
       setIsLoadingOrigin(true);
       const response = await fetch(`http://localhost:8000/api/external/locations/?query=${query}`);
@@ -54,7 +73,6 @@ function TripPlanner() {
     }
   };
 
-  // 📅 Calcula duración del viaje
   const calculateDuration = () => {
     if (tripData.departureDate && tripData.returnDate) {
       const start = new Date(tripData.departureDate);
@@ -67,18 +85,27 @@ function TripPlanner() {
 
   const totalPeople = tripData.adults + tripData.seniors + tripData.children;
 
+  const areFieldsComplete = () => {
+    return tripData.origin && tripData.departureDate && tripData.returnDate && totalPeople > 0 && tripData.budget;
+  };
+
+  // 🔹 Función para actualizar usuario desde LoginModal
+  const handleLogin = (usuarioData) => {
+    localStorage.setItem('usuario', JSON.stringify(usuarioData));
+    setUsuario(usuarioData);
+  };
+
   return (
     <div className="trip-planner">
       <h3 className="trip-title">Crea y planea tu viaje</h3>
       <p className="trip-subtitle">Comencemos con los datos básicos de tu viaje</p>
 
-      {/* Origen con autocompletado */}
+      {/* Origen */}
       <div className="form-group">
         <label>
           <IoLocationSharp className="icon" />
           ¿Desde dónde inicias tu viaje?
         </label>
-
         <div className="autocomplete-wrapper">
           <input
             type="text"
@@ -91,17 +118,15 @@ function TripPlanner() {
             }}
             className="input-field"
           />
-
-          {/* Lista de sugerencias */}
           {originSuggestions.length > 0 && (
             <ul className="suggestions-list">
               {originSuggestions.map((sug, index) => (
                 <li
                   key={index}
                   onClick={() => {
-                    handleInputChange('origin', sug.nombre);
-                    setOriginSuggestions([]);
-                  }}
+                  handleInputChange('origin', sug.codigo); // guardas el IATA real
+                  setOriginSuggestions([]);
+                }}
                   className="suggestion-item"
                 >
                   {sug.nombre} ({sug.codigo})
@@ -109,10 +134,7 @@ function TripPlanner() {
               ))}
             </ul>
           )}
-
-          {isLoadingOrigin && (
-            <div className="loading-text">Buscando...</div>
-          )}
+          {isLoadingOrigin && <div className="loading-text">Buscando...</div>}
         </div>
       </div>
 
@@ -133,7 +155,6 @@ function TripPlanner() {
             locale="es"
           />
         </div>
-
         <div className="form-group">
           <label>
             <MdCalendarToday className="icon" />
@@ -156,21 +177,17 @@ function TripPlanner() {
         <strong>Duración del viaje:</strong> {calculateDuration()} días
       </div>
 
-      {/* Personas y Presupuesto */}
+      {/* Personas y presupuesto */}
       <div className="form-row spaced">
         <div className="form-group">
           <label>
             <IoPeople className="icon" />
             ¿Cuántas personas van?
           </label>
-          <div
-            className="person-selector"
-            onClick={() => setShowPersonModal(true)}
-          >
+          <div className="person-selector" onClick={() => setShowPersonModal(true)}>
             {totalPeople} {totalPeople === 1 ? 'persona' : 'personas'}
           </div>
         </div>
-
         <div className="form-group">
           <label>
             <RiMoneyDollarCircleFill className="icon" />
@@ -190,18 +207,32 @@ function TripPlanner() {
       <div className="btn-container">
         <button
           className="add-destination-btn"
-          onClick={() => setShowDestinationModal(true)}
+          onClick={() => {
+            if (!usuario) {
+              alert('Debes iniciar sesión para agregar destinos.');
+              return;
+            }
+            if (!areFieldsComplete()) {
+              alert('Por favor completa todos los campos antes de agregar destinos.');
+              return;
+            }
+            setShowDestinationModal(true);
+          }}
         >
           Agregar destinos →
         </button>
       </div>
 
-      {/* Modal de destinos */}
+      {/* Modal destinos */}
       {showDestinationModal && (
-        <DestinationModal onClose={() => setShowDestinationModal(false)} />
-      )}
+      <DestinationModal
+        onClose={() => setShowDestinationModal(false)}
+        addDestination={addDestination}
+        tripData={tripData}
+      />
+    )}
 
-      {/* Modal de personas */}
+      {/* Modal personas */}
       {showPersonModal && (
         <div className="modal-overlay" onClick={() => setShowPersonModal(false)}>
           <div className="person-modal" onClick={(e) => e.stopPropagation()}>
