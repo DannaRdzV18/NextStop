@@ -8,6 +8,7 @@ import { IoLocationSharp, IoPeople } from 'react-icons/io5';
 import { MdCalendarToday } from 'react-icons/md';
 import { RiMoneyDollarCircleFill } from 'react-icons/ri';
 import DestinationModal from './DestinationModal';
+import FinalItineraryModal from './FinalItineraryModal'; // 🔹 Nuevo modal final
 
 registerLocale('es', es);
 
@@ -25,24 +26,59 @@ function TripPlanner() {
 
   const [showPersonModal, setShowPersonModal] = useState(false);
   const [showDestinationModal, setShowDestinationModal] = useState(false);
+  const [showItineraryModal, setShowItineraryModal] = useState(false);
 
   const [originSuggestions, setOriginSuggestions] = useState([]);
   const [isLoadingOrigin, setIsLoadingOrigin] = useState(false);
 
-  const addDestination = (nuevoDestino) => {
-  setTripData((prev) => ({
-    ...prev,
-    destinos: [...(prev.destinos || []), nuevoDestino]
-  }));
-};
+  // 🔹 Reiniciar datos después de crear itinerario
+  const resetTripData = () => {
+    setTripData({
+      origin: '',
+      departureDate: null,
+      returnDate: null,
+      adults: 1,
+      seniors: 0,
+      children: 0,
+      budget: '',
+      destinations: [],
+    });
+  };
 
-  // 🔹 Estado de sesión React-friendly
+  // 🔹 Añadir destino
+  const addDestination = (nuevoDestino) => {
+    setTripData((prev) => {
+      const prevDestinations = prev.destinations || [];
+      const newDestinations = [...prevDestinations, nuevoDestino];
+
+      const usedDays = newDestinations.reduce((s, d) => s + Number(d.dias ?? d.days ?? 0), 0);
+      const totalDays = calculateDurationFromPrev(prev);
+
+      if (totalDays > 0 && usedDays >= totalDays) {
+        // Cierra modal de destino y abre modal final
+        setTimeout(() => setShowItineraryModal(true), 100);
+      }
+
+      return { ...prev, destinations: newDestinations };
+    });
+  };
+
+  const calculateDurationFromPrev = (prevState) => {
+    if (prevState.departureDate && prevState.returnDate) {
+      const start = new Date(prevState.departureDate);
+      const end = new Date(prevState.returnDate);
+      const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+      return days > 0 ? days : 0;
+    }
+    return 0;
+  };
+
+  // 🔹 Ya no requiere sesión
   const [usuario, setUsuario] = useState(() => {
     const storedUser = localStorage.getItem('usuario');
     return storedUser ? JSON.parse(storedUser) : null;
   });
 
-  // 🔹 Listener de localStorage para sincronizar entre pestañas
   useEffect(() => {
     const handleStorageChange = () => {
       const storedUser = localStorage.getItem('usuario');
@@ -52,8 +88,16 @@ function TripPlanner() {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
+  // 🔹 Limpia destinos si cambian datos principales
+  useEffect(() => {
+    if ((tripData.destinations || []).length > 0) {
+      setTripData((prev) => ({ ...prev, destinations: [] }));
+      console.log('TripPlanner: campos principales cambiaron -> destinos reiniciados');
+    }
+  }, [tripData.origin, tripData.departureDate, tripData.returnDate, tripData.budget]);
+
   const handleInputChange = (field, value) => {
-    setTripData({ ...tripData, [field]: value });
+    setTripData((prev) => ({ ...prev, [field]: value }));
   };
 
   const fetchCitySuggestions = async (query) => {
@@ -89,10 +133,16 @@ function TripPlanner() {
     return tripData.origin && tripData.departureDate && tripData.returnDate && totalPeople > 0 && tripData.budget;
   };
 
-  // 🔹 Función para actualizar usuario desde LoginModal
-  const handleLogin = (usuarioData) => {
-    localStorage.setItem('usuario', JSON.stringify(usuarioData));
-    setUsuario(usuarioData);
+  const handleOpenDestinationModal = () => {
+    if (!areFieldsComplete()) {
+      alert('Por favor completa todos los campos antes de agregar destinos.');
+      return;
+    }
+    if (calculateDuration() <= 0) {
+      alert('Asegúrate de que las fechas sean válidas y que la duración sea mayor a 0.');
+      return;
+    }
+    setShowDestinationModal(true);
   };
 
   return (
@@ -124,9 +174,9 @@ function TripPlanner() {
                 <li
                   key={index}
                   onClick={() => {
-                  handleInputChange('origin', sug.codigo); // guardas el IATA real
-                  setOriginSuggestions([]);
-                }}
+                    handleInputChange('origin', sug.codigo);
+                    setOriginSuggestions([]);
+                  }}
                   className="suggestion-item"
                 >
                   {sug.nombre} ({sug.codigo})
@@ -205,41 +255,38 @@ function TripPlanner() {
 
       {/* Botón agregar destinos */}
       <div className="btn-container">
-        <button
-          className="add-destination-btn"
-          onClick={() => {
-            if (!usuario) {
-              alert('Debes iniciar sesión para agregar destinos.');
-              return;
-            }
-            if (!areFieldsComplete()) {
-              alert('Por favor completa todos los campos antes de agregar destinos.');
-              return;
-            }
-            setShowDestinationModal(true);
-          }}
-        >
+        <button className="add-destination-btn" onClick={handleOpenDestinationModal}>
           Agregar destinos →
         </button>
       </div>
 
       {/* Modal destinos */}
       {showDestinationModal && (
-      <DestinationModal
-        onClose={() => setShowDestinationModal(false)}
-        addDestination={addDestination}
-        tripData={tripData}
-      />
-    )}
+        <DestinationModal
+          onClose={() => setShowDestinationModal(false)}
+          addDestination={addDestination}
+          tripData={tripData}
+          totalDays={calculateDuration()}
+          currentDestinations={tripData.destinations || []}
+        />
+      )}
+
+      {/* Modal final de itinerario */}
+      {showItineraryModal && (
+        <FinalItineraryModal
+          onClose={() => {
+            setShowItineraryModal(false);
+            resetTripData(); // 🔹 Reinicia al cerrar
+          }}
+          tripData={tripData}
+        />
+      )}
 
       {/* Modal personas */}
       {showPersonModal && (
         <div className="modal-overlay" onClick={() => setShowPersonModal(false)}>
           <div className="person-modal" onClick={(e) => e.stopPropagation()}>
-            <button
-              className="close-modal-btn"
-              onClick={() => setShowPersonModal(false)}
-            >
+            <button className="close-modal-btn" onClick={() => setShowPersonModal(false)}>
               ✕
             </button>
             <h3>Personas</h3>
@@ -252,18 +299,14 @@ function TripPlanner() {
               </div>
               <div className="person-controls">
                 <button
-                  onClick={() =>
-                    handleInputChange('adults', Math.max(1, tripData.adults - 1))
-                  }
+                  onClick={() => handleInputChange('adults', Math.max(1, tripData.adults - 1))}
                   className="control-btn"
                 >
                   −
                 </button>
                 <span className="person-count">{tripData.adults}</span>
                 <button
-                  onClick={() =>
-                    handleInputChange('adults', tripData.adults + 1)
-                  }
+                  onClick={() => handleInputChange('adults', tripData.adults + 1)}
                   className="control-btn"
                 >
                   +
@@ -278,18 +321,14 @@ function TripPlanner() {
               </div>
               <div className="person-controls">
                 <button
-                  onClick={() =>
-                    handleInputChange('seniors', Math.max(0, tripData.seniors - 1))
-                  }
+                  onClick={() => handleInputChange('seniors', Math.max(0, tripData.seniors - 1))}
                   className="control-btn"
                 >
                   −
                 </button>
                 <span className="person-count">{tripData.seniors}</span>
                 <button
-                  onClick={() =>
-                    handleInputChange('seniors', tripData.seniors + 1)
-                  }
+                  onClick={() => handleInputChange('seniors', tripData.seniors + 1)}
                   className="control-btn"
                 >
                   +
@@ -304,18 +343,14 @@ function TripPlanner() {
               </div>
               <div className="person-controls">
                 <button
-                  onClick={() =>
-                    handleInputChange('children', Math.max(0, tripData.children - 1))
-                  }
+                  onClick={() => handleInputChange('children', Math.max(0, tripData.children - 1))}
                   className="control-btn"
                 >
                   −
                 </button>
                 <span className="person-count">{tripData.children}</span>
                 <button
-                  onClick={() =>
-                    handleInputChange('children', tripData.children + 1)
-                  }
+                  onClick={() => handleInputChange('children', tripData.children + 1)}
                   className="control-btn"
                 >
                   +

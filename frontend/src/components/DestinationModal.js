@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import './DestinationModal.css';
-import { IoLocationSharp } from 'react-icons/io5';
-import { MdOutlineDirectionsTransit } from 'react-icons/md';
+import { IoLocationSharp, IoInformationCircleOutline } from 'react-icons/io5';
 import { convertToMXN } from '../utils/convertToMXN';
 
-function DestinationModal({ onClose, addDestination, tripData }) {
+function DestinationModal({ onClose, addDestination, tripData, totalDays = 0, currentDestinations = [] }) {
   const [destination, setDestination] = useState('');
   const [days, setDays] = useState('');
-  const [transport, setTransport] = useState('vuelos');
   const [showOptions, setShowOptions] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
@@ -20,8 +18,8 @@ function DestinationModal({ onClose, addDestination, tripData }) {
   const [noFlightsMessage, setNoFlightsMessage] = useState('');
   const [noHotelsMessage, setNoHotelsMessage] = useState('');
   const [noActivitiesMessage, setNoActivitiesMessage] = useState('');
+  const [error, setError] = useState('');
 
-  // Formateo de fechas
   const formatDate = (date) => {
     if (!date) return "";
     const d = new Date(date);
@@ -34,138 +32,137 @@ function DestinationModal({ onClose, addDestination, tripData }) {
   salida.setDate(salida.getDate() + destinoDias);
   const formattedCheckOut = salida.toISOString().split("T")[0];
 
-  // Fetch de sugerencias
   useEffect(() => {
     const fetchSuggestions = async () => {
       if (destination.length < 2) {
         setSuggestions([]);
         return;
       }
-
       setLoadingSuggestions(true);
       try {
-        const response = await fetch(`http://localhost:8000/api/external/locations/?query=${destination}`);
-        if (!response.ok) throw new Error('Error al obtener sugerencias');
-        const data = await response.json();
+        const res = await fetch(`http://localhost:8000/api/external/locations/?query=${destination}`);
+        if (!res.ok) throw new Error('Error');
+        const data = await res.json();
         setSuggestions(data);
-      } catch (error) {
-        console.error('Error al obtener sugerencias:', error);
+      } catch (err) {
+        console.error(err);
         setSuggestions([]);
       } finally {
         setLoadingSuggestions(false);
       }
     };
-
-    const delayDebounce = setTimeout(fetchSuggestions, 300);
-    return () => clearTimeout(delayDebounce);
+    const timer = setTimeout(fetchSuggestions, 300);
+    return () => clearTimeout(timer);
   }, [destination]);
 
   const handleSelectSuggestion = (item) => {
-    setDestination(item.codigo || item.nombre);
+    setDestination(item.nombre || item.codigo || '');
     setSuggestions([]);
   };
 
-  // Fetch de opciones
   const fetchOptions = async () => {
     if (!destination || !days || !tripData) return;
-
-    const { origin, departureDate, adults, seniors, children, budget } = tripData;
-    const totalPeople = adults + seniors + children;
-    const budgetNumber = Number(budget);
+    const { origin, adults } = tripData;
+    const totalPeople = adults;
+    const budgetNumber = Number(tripData.budget || 0);
 
     setLoadingOptions(true);
+    setFlights([]); setHotels([]); setActivities([]);
+    setNoFlightsMessage(''); setNoHotelsMessage(''); setNoActivitiesMessage('');
 
     try {
-      // ✈ Vuelos
-      if (transport === 'vuelos') {
-        const flightRes = await fetch(
-          `http://localhost:8000/api/external/vuelos/?origen=${encodeURIComponent(origin)}&destino=${encodeURIComponent(destination)}&fecha_salida=${formattedDeparture}`
-        );
-        if (!flightRes.ok) throw new Error(`Error vuelos: ${flightRes.status}`);
-        const flightData = await flightRes.json();
-
-        if (flightData.length === 0) {
-          setFlights([]);
-          setNoFlightsMessage('No hay vuelos disponibles en estas fechas.');
-        } else {
-          const vuelosFiltrados = flightData
-            .filter(f => convertToMXN(f.price.total, f.price.currency) <= budgetNumber)
-            .slice(0, 3);
-          setFlights(vuelosFiltrados);
-
-          setNoFlightsMessage(vuelosFiltrados.length === 0
-            ? 'Hay vuelos disponibles, pero ninguno entra en tu presupuesto.'
-            : ''
-          );
-        }
-      } else {
-        setFlights([]);
-        setNoFlightsMessage('');
-      }
-
-      // 🏨 Hoteles
-      const hotelRes = await fetch(
-        `http://localhost:8000/api/external/hoteles/?ciudad=${encodeURIComponent(destination)}&fecha_entrada=${formattedDeparture}&fecha_salida=${formattedCheckOut}&personas=${adults}`
+      const flightRes = await fetch(
+        `http://localhost:8000/api/external/vuelos/?origen=${encodeURIComponent(origin)}&destino=${encodeURIComponent(destination)}&fecha_salida=${formattedDeparture}`
       );
-      if (!hotelRes.ok) throw new Error(`Error hoteles: ${hotelRes.status}`);
-      const hotelData = await hotelRes.json();
-
-      if (hotelData.length === 0) {
-        setHotels([]);
-        setNoHotelsMessage('No hay hoteles disponibles en estas fechas.');
-      } else {
-        const hotelesFiltrados = hotelData
-          .filter(h => (convertToMXN(h.price, h.currency) * destinoDias) <= budgetNumber)
-          .slice(0, 3);
-        setHotels(hotelesFiltrados);
-
-        setNoHotelsMessage(hotelesFiltrados.length === 0
-          ? 'Hay hoteles disponibles, pero ninguno entra en tu presupuesto.'
-          : ''
-        );
+      if (flightRes.ok) {
+        const flightData = await flightRes.json();
+        if (!Array.isArray(flightData) || flightData.length === 0) {
+          setFlights([]); setNoFlightsMessage('No hay vuelos disponibles en estas fechas.');
+        } else setFlights(flightData.slice(0, 3));
       }
 
-      // 🎟 Actividades
+      const hotelRes = await fetch(
+        `http://localhost:8000/api/external/hoteles/?ciudad=${encodeURIComponent(destination)}&fecha_entrada=${formattedDeparture}&fecha_salida=${formattedCheckOut}&personas=${totalPeople}`
+      );
+      if (hotelRes.ok) {
+        const hotelData = await hotelRes.json();
+        if (!Array.isArray(hotelData) || hotelData.length === 0) {
+          setHotels([]); setNoHotelsMessage('No hay hoteles disponibles en estas fechas.');
+        } else setHotels(hotelData.slice(0, 3));
+      }
+
       const actRes = await fetch(
         `http://localhost:8000/api/external/activities/?ciudad=${encodeURIComponent(destination)}&fecha_inicio=${formattedDeparture}`
       );
-      if (!actRes.ok) throw new Error(`Error actividades: ${actRes.status}`);
-      const actData = await actRes.json();
+      if (actRes.ok) {
+        const actData = await actRes.json();
+        if (!Array.isArray(actData) || actData.length === 0) {
+          setActivities([]); setNoActivitiesMessage('No se encontraron actividades.');
+        } else setActivities(actData.slice(0, 3));
+      }
 
-      setActivities(actData.slice(0, 3));
-      setNoActivitiesMessage(actData.length === 0 ? 'No se encontraron actividades para estas fechas.' : '');
-
-    } catch (error) {
-      console.error('Error al cargar opciones:', error);
-      setNoFlightsMessage('Error al cargar vuelos.');
-      setNoHotelsMessage('Error al cargar hoteles.');
-      setNoActivitiesMessage('Error al cargar actividades.');
+    } catch (err) {
+      console.error('fetch options error', err);
+      setNoFlightsMessage('Error al cargar opciones.');
+      setNoHotelsMessage('Error al cargar opciones.');
+      setNoActivitiesMessage('Error al cargar opciones.');
     } finally {
       setLoadingOptions(false);
     }
   };
 
   const handleShowOptions = async () => {
+    setError('');
+    if (!destination || !days) {
+      setError('Completa destino y días antes de mostrar opciones.');
+      return;
+    }
+    const usedDays = (currentDestinations || []).reduce((s, d) => s + Number(d.dias ?? d.days ?? 0), 0);
+    const remaining = totalDays - usedDays;
+    if (Number(days) <= 0) {
+      setError('El número de días debe ser mayor a 0.');
+      return;
+    }
+    if (Number(days) > remaining) {
+      setError(`Solo te quedan ${remaining} días disponibles.`);
+      return;
+    }
+    setError('');
     setShowOptions(true);
     await fetchOptions();
   };
 
-  const handleSaveDestination = () => {
-    if (!destination || !days) return;
-    const newDestination = {
-      nombre: destination,
-      dias: days,
-      transporte: transport,
-      flights,
-      hotels,
-      activities,
-    };
+  const handleSaveDestinationAndClose = () => {
+    if (!destination || !days) {
+      setError('Completa destino y días antes de guardar.');
+      return;
+    }
+    const newDestination = { nombre: destination, dias: Number(days), flights, hotels, activities };
     if (addDestination) addDestination(newDestination);
-    setDestination('');
-    setDays('');
-    setTransport('vuelos');
-    setShowOptions(false);
+    onClose && onClose();
   };
+
+  const handleSaveDestinationAndContinue = () => {
+    if (!destination || !days) {
+      setError('Completa destino y días antes de guardar.');
+      return;
+    }
+    const usedDays = (currentDestinations || []).reduce((s, d) => s + Number(d.dias ?? d.days ?? 0), 0);
+    const remaining = totalDays - usedDays;
+    if (Number(days) > remaining) {
+      setError(`Solo te quedan ${remaining} días disponibles.`);
+      return;
+    }
+    const newDestination = { nombre: destination, dias: Number(days), flights, hotels, activities };
+    if (addDestination) addDestination(newDestination);
+    const nuevoUsado = usedDays + Number(days);
+    if (nuevoUsado >= totalDays) { onClose && onClose(); return; }
+    setDestination(''); setDays(''); setFlights([]); setHotels([]); setActivities([]); setShowOptions(false);
+  };
+
+  // 🔹 Cálculo para mostrar botones correctos
+  const usedDays = (currentDestinations || []).reduce((s, d) => s + Number(d.dias ?? d.days ?? 0), 0);
+  const remaining = totalDays - usedDays;
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -176,7 +173,7 @@ function DestinationModal({ onClose, addDestination, tripData }) {
         <div className="modal-content-scroll">
           {!showOptions ? (
             <div className="destination-inputs">
-              <div className="form-group">
+              <div className="form-group" style={{ position: 'relative' }}>
                 <label><IoLocationSharp className="icon" /> Destino</label>
                 <input
                   type="text"
@@ -208,72 +205,62 @@ function DestinationModal({ onClose, addDestination, tripData }) {
                 />
               </div>
 
-              <div className="form-group">
-                <label><MdOutlineDirectionsTransit className="icon" /> Tipo de transporte</label>
-                <select
-                  value={transport}
-                  onChange={(e) => setTransport(e.target.value)}
-                  className="input-field"
-                >
-                  <option value="vuelos">Vuelos</option>
-                </select>
+              {error && <p className="error-text">{error}</p>}
+
+              <div className="destination-buttons">
+                <button className="destination-btn btn-show" onClick={handleShowOptions}>
+                  Mostrar opciones
+                </button>
+                <button className="destination-btn btn-cancel" onClick={onClose}>
+                  Cancelar
+                </button>
               </div>
 
-              <button className="primary-btn" onClick={handleShowOptions}>
-                Mostrar opciones
-              </button>
+              <div className="info-link">
+                <IoInformationCircleOutline className="info-icon" />
+                <a href="https://www.world-airport-codes.com/" target="_blank" rel="noopener noreferrer">
+                  ¿Tienes dudas sobre tus viajes? Haz clic aquí
+                </a>
+              </div>
             </div>
           ) : (
             <div className="options-section">
               {loadingOptions ? <p>Cargando opciones...</p> : (
                 <>
-                  {/* Vuelos */}
-                  {transport === 'vuelos' && (
-                    <div className="cards-section">
-                      <h4>Vuelos disponibles</h4>
-                      {noFlightsMessage && <p className="no-options-msg">{noFlightsMessage}</p>}
-                      {flights.length > 0 && flights.map((f, i) => {
-                        const segment = f.itineraries[0].segments[0];
-                        return (
-                          <div key={i} className="card">
-                            <p>Aerolínea: {segment.carrierCode} | Vuelo: {segment.number}</p>
-                            <p>{segment.departure.iataCode} → {segment.arrival.iataCode}</p>
-                            <p>Salida: {new Date(segment.departure.at).toLocaleString()} | Llegada: {new Date(segment.arrival.at).toLocaleString()}</p>
-                            <p>Duración: {f.itineraries[0].duration}</p>
-                            <p>Precio: {convertToMXN(f.price.total, f.price.currency).toFixed(2)} MXN</p>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
+                  <div className="cards-section">
+                    <h4>Vuelos disponibles</h4>
+                    {noFlightsMessage && <p className="no-options-msg">{noFlightsMessage}</p>}
+                    {flights.map((f, i) => {
+                      const seg = f.itineraries?.[0]?.segments?.[0] || {};
+                      return (
+                        <div key={i} className="card">
+                          <p>Aerolínea: {seg.carrierCode} | Vuelo: {seg.number}</p>
+                          <p>{seg.departure?.iataCode} → {seg.arrival?.iataCode}</p>
+                          <p>Duración: {f.itineraries?.[0]?.duration}</p>
+                          <p>Precio: {f.price ? convertToMXN(f.price.total, f.price.currency).toFixed(2) + ' MXN' : 'N/A'}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
 
-                  {/* Hoteles */}
                   <div className="cards-section">
                     <h4>Hoteles</h4>
                     {noHotelsMessage && <p className="no-options-msg">{noHotelsMessage}</p>}
-                    {hotels.length > 0 && hotels.map((h, i) => (
+                    {hotels.map((h, i) => (
                       <div key={i} className="card">
                         <p>{h.name} ({h.rating}★)</p>
                         <p>Precio por noche: {convertToMXN(h.price, h.currency).toFixed(2)} MXN</p>
-                        <p>Ubicación: {h.city}</p>
-                        <p>Check-in: {h.checkIn || formattedDeparture} | Check-out: {h.checkOut || formattedCheckOut}</p>
                       </div>
                     ))}
                   </div>
 
-                  {/* Actividades */}
                   <div className="cards-section">
                     <h4>Actividades</h4>
                     {noActivitiesMessage && <p className="no-options-msg">{noActivitiesMessage}</p>}
-                    {activities.length > 0 && activities.map((a, i) => (
+                    {activities.map((a, i) => (
                       <div key={i} className="card">
                         <p>{a.name}</p>
                         <p>Tipo: {a.type || 'N/A'}</p>
-                        <p>Duración: {a.duration || 'N/A'}</p>
-                        <p>Precio: {a.price && a.price !== 'N/A'
-                          ?`${convertToMXN(a.price, a.currency).toFixed(2)} MXN`
-                          : 'N/A'}
-                        </p>
                       </div>
                     ))}
                   </div>
@@ -283,25 +270,30 @@ function DestinationModal({ onClose, addDestination, tripData }) {
           )}
         </div>
 
-        <div className="modal-actions">
-          {showOptions ? (
-            <div className="destination-buttons">
-              <button className="destination-btn btn-back" onClick={() => setShowOptions(false)}>
-                Volver a la búsqueda
-              </button>
-              <button className="destination-btn btn-save" onClick={handleSaveDestination}>
-                Guardar destino
-              </button>
-              <button className="destination-btn btn-add" onClick={handleSaveDestination}>
-                Agregar otro destino
-              </button>
-            </div>
-          ) : (
-            <button className="secondary-btn" onClick={onClose}>
-              Cancelar
+        {/* ✅ BOTONES DE OPCIONES */}
+        {showOptions && (
+          <div className="destination-buttons">
+            <button className="destination-btn btn-back" onClick={() => setShowOptions(false)}>
+              Volver
             </button>
-          )}
-        </div>
+
+            {/* 🔹 Mostrar solo 2 botones cuando se cumplan los días */}
+            {remaining - Number(days) <= 0 ? (
+              <button className="destination-btn btn-add" onClick={() => { handleSaveDestinationAndClose(); onClose && onClose(); }}>
+                Finalizar itinerario
+              </button>
+            ) : (
+              <>
+                <button className="destination-btn btn-save" onClick={handleSaveDestinationAndClose}>
+                  Guardar destino
+                </button>
+                <button className="destination-btn btn-add" onClick={handleSaveDestinationAndContinue}>
+                  Agregar otro destino
+                </button>
+              </>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
