@@ -36,7 +36,7 @@ class VuelosView(APIView):
         proveedor, _ = ProveedorAPI.objects.get_or_create(nombre="Amadeus API", tipo="VUELO")
         DetalleItinerario.objects.create(
             itinerario=itinerario,
-            proveedor="VUELO",
+            proveedor=proveedor,
             tipo_item="TRANSPORTE",
             origen=vuelo.get("origin", ""),
             destinos=vuelo.get("destination", ""),
@@ -45,6 +45,7 @@ class VuelosView(APIView):
             costo_estimado=vuelo.get("price", {}).get("total", 0),
             personas=1,
             presupuesto=vuelo.get("price", {}).get("total", 0),
-            orden=DetalleItinerario.objects.filter(itinerario=itinerario).count() + 1
+            orden=DetalleItinerario.objects.filter(itinerario=itinerario).count() + 1,
+            info_completa=vuelo
         )
         return Response({"mensaje": "Vuelo agregado al itinerario"})

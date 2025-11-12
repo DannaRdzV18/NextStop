@@ -43,8 +43,8 @@ class DetalleItinerario(models.Model):
         ('ACTIVIDAD', 'Actividad'),
     ]
 
-    itinerario = models.ForeignKey(Itinerario, on_delete=models.CASCADE, related_name='detalles')
-    proveedor = models.ForeignKey(ProveedorAPI, on_delete=models.SET_NULL, null=True, blank=True)
+    itinerario = models.ForeignKey('Itinerario', on_delete=models.CASCADE, related_name='detalles')
+    proveedor = models.ForeignKey('ProveedorAPI', on_delete=models.SET_NULL, null=True, blank=True)
     tipo_item = models.CharField(max_length=15, choices=TIPO_ITEM_CHOICES)
     api_id = models.CharField(max_length=100, blank=True, null=True)
     nombre_item = models.CharField(max_length=200)
@@ -61,6 +61,8 @@ class DetalleItinerario(models.Model):
     orden = models.IntegerField(blank=True, null=True)
 
     seleccionado = models.BooleanField(default=False)
+
+    info_completa = models.JSONField(blank=True, null=True)
 
     creado_en = models.DateTimeField(auto_now_add=True)
 

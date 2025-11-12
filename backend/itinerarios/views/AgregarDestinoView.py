@@ -21,12 +21,16 @@ class AgregarDestinoView(APIView):
         # Crear detalle del destino
         DetalleItinerario.objects.create(
             itinerario=itinerario,
-            proveedor=None,
             tipo_item="DESTINO",
-            origen=request.data.get("origen", ""),
-            destinos=destino.get("codigo", ""),
-            fecha_salida=destino.get("fecha_salida", ""),
-            fecha_llegada=destino.get("fecha_llegada", ""),
+            nombre_item=destino.get("ciudad", "Destino"),
+            fecha_salida=destino.get("fecha_salida"),
+            fecha_llegada=destino.get("fecha_llegada"),
+            personas=destino.get("personas", 1),
+            info_completa={
+                "vuelos": destino.get("info_vuelos", []),
+                "hoteles": destino.get("info_hoteles", []),
+                "actividades": destino.get("info_actividades", [])
+            },
             orden=DetalleItinerario.objects.filter(itinerario=itinerario).count() + 1
         )
 

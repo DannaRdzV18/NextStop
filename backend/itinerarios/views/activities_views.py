@@ -72,16 +72,17 @@ class ActivitiesView(APIView):
         try:
             DetalleItinerario.objects.create(
                 itinerario=itinerario,
-                proveedor="Actividad",
-                tipo_item="DESTINO",
-                nombre_item=actividad.get("name", "Actividad turística"),
-                destinos=actividad.get("city_name", ""),
+                proveedor=proveedor,
+                tipo_item="ACTIVIDAD",
+                origen=actividad.get("city_name", ""),
+                destinos=actividad.get("name", ""),
                 fecha_salida=actividad.get("start_date", ""),
                 fecha_llegada=actividad.get("end_date", ""),
                 costo_estimado=actividad.get("price", {}).get("amount", 0),
                 personas=request.data.get("personas", 1),
                 presupuesto=actividad.get("price", {}).get("amount", 0),
                 orden=DetalleItinerario.objects.filter(itinerario=itinerario).count() + 1,
+                info_completa=actividad
             )
         except Exception as e:
             print("Error al guardar actividad:", e)

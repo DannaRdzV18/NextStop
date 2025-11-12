@@ -48,7 +48,7 @@ class HotelesView(APIView):
         try:
             DetalleItinerario.objects.create(
                 itinerario=itinerario,
-                proveedor="HOTEL",
+                proveedor=proveedor,
                 tipo_item="HOTEL",
                 origen=hotel.get("cityCode", ""),
                 destinos=hotel.get("hotel", {}).get("name", "Hotel sin nombre"),
@@ -57,7 +57,8 @@ class HotelesView(APIView):
                 costo_estimado=hotel.get("price", {}).get("total", 0),
                 personas=hotel.get("adults", 1),
                 presupuesto=hotel.get("price", {}).get("total", 0),
-                orden=DetalleItinerario.objects.filter(itinerario=itinerario).count() + 1
+                orden=DetalleItinerario.objects.filter(itinerario=itinerario).count() + 1,
+                info_completa=hotel
             )
         except Exception as e:
             return Response({"error": f"No se pudo guardar el hotel: {str(e)}"}, status=500)

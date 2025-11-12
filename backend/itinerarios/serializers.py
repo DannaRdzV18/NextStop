@@ -6,7 +6,7 @@ class DetalleItinerarioSerializer(serializers.ModelSerializer):
         model = DetalleItinerario
         fields = [
             "origen", "destinos", "fecha_salida", "fecha_llegada",
-            "costo_estimado", "orden", "personas", "presupuesto"
+            "costo_estimado", "orden", "personas", "presupuesto", "info_completa"
         ]
 
     def validate(self, data):

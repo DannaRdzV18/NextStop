@@ -135,15 +135,38 @@ function DestinationModal({ onClose, addDestination, tripData, totalDays = 0, cu
     await fetchOptions();
   };
 
-  const handleSaveDestinationAndClose = () => {
-    if (!destination || !days) {
-      setError('Completa destino y días antes de guardar.');
-      return;
-    }
-    const newDestination = { nombre: destination, dias: Number(days), flights, hotels, activities };
-    if (addDestination) addDestination(newDestination);
-    onClose && onClose();
-  };
+  const handleSaveDestinationAndClose = async () => {
+      if (!destination || !days) {
+        setError('Completa destino y días antes de guardar.');
+        return;
+      }
+
+      const newDestination = { nombre: destination, dias: Number(days), flights, hotels, activities };
+
+      // Aquí construyes el payload
+      const payload = {
+        id_itinerario: tripData.itineraryId, // asegúrate de tener el id del itinerario
+        destino: newDestination
+      };
+
+      try {
+        const res = await fetch('http://localhost:8000/api/itinerarios/agregar-destino/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) throw new Error('Error al guardar destino');
+
+        // Si hay función para actualizar el front
+        if (addDestination) addDestination(newDestination);
+        onClose && onClose();
+
+      } catch (err) {
+        console.error(err);
+        setError('No se pudo guardar el destino. Intenta de nuevo.');
+      }
+    };
 
   const handleSaveDestinationAndContinue = () => {
     if (!destination || !days) {
