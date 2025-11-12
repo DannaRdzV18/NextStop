@@ -48,7 +48,7 @@ class HotelesView(APIView):
         try:
             DetalleItinerario.objects.create(
                 itinerario=itinerario,
-                proveedor=proveedor,
+                proveedor="HOTEL",
                 tipo_item="HOTEL",
                 origen=hotel.get("cityCode", ""),
                 destinos=hotel.get("hotel", {}).get("name", "Hotel sin nombre"),

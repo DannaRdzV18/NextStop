@@ -8,22 +8,21 @@ from ..serializers import ItinerarioSerializer
 from apis_externas.services.amadeus_flights import buscar_vuelos
 from apis_externas.services.amadeus_hotels import buscar_hoteles
 from apis_externas.services.amadeus_activities import buscar_actividades
-from apis_externas.services.amadeus_transfers import buscar_transfers
 
 # Logger personalizado
 from logs.utils.logger import registrar_log
-
+from usuarios.models import Usuario
 
 class GenerarItinerarioView(APIView):
     """
-    Genera un itinerario completo con vuelos, hoteles, actividades y traslados.
-    Soporta tipo_transporte: 'vuelo' o 'terrestre'.
+    Genera un itinerario completo con vuelos, hoteles y actividades.
+    (Ya no maneja transportes terrestres)
     """
     permission_classes = [AllowAny]
 
     def post(self, request):
         data = request.data
-        usuario = request.user
+        usuario = request.user if request.user.is_authenticated else Usuario.objects.get(id=1)
 
         nombre = data.get("nombre")
         ciudad_salida = data.get("ciudad_salida")
@@ -50,42 +49,27 @@ class GenerarItinerarioView(APIView):
                 ciudad_destino = destino.get("codigo")
                 fecha_llegada = destino.get("fecha_llegada")
                 fecha_salida = destino.get("fecha_salida")
-                tipo_transporte = destino.get("tipo_transporte", "vuelo").lower()
 
                 if not all([ciudad_destino, fecha_llegada, fecha_salida]):
                     registrar_log(usuario, "ERROR", f"Destino con datos incompletos: {destino}")
                     continue
 
-                # === 1. Transporte (vuelos o terrestres) ===
+                # === 1. VUELOS ===
                 try:
-                    if tipo_transporte == "vuelo":
-                        transportes = buscar_vuelos(origen_actual, ciudad_destino, fecha_llegada)[:3]
-                        proveedor_nombre, tipo_proveedor = "Amadeus API", "VUELO"
-                    elif tipo_transporte == "terrestre":
-                        transportes = buscar_transfers(ciudad_destino, fecha_llegada)[:3]
-                        proveedor_nombre, tipo_proveedor = "Amadeus API", "TRANSFER"
-                    else:
-                        registrar_log(usuario, "ERROR", f"Tipo de transporte inválido: {tipo_transporte}")
-                        continue
+                    vuelos = buscar_vuelos(origen_actual, ciudad_destino, fecha_llegada)[:3]
+                    proveedor_vuelo, _ = ProveedorAPI.objects.get_or_create(nombre="Amadeus API", tipo="VUELO")
 
-                    proveedor_transporte, _ = ProveedorAPI.objects.get_or_create(nombre=proveedor_nombre, tipo=tipo_proveedor)
-                    if not transportes:
-                        registrar_log(usuario, "INFO", f"No se encontraron transportes para {ciudad_destino}")
+                    if not vuelos:
+                        registrar_log(usuario, "INFO", f"No se encontraron vuelos hacia {ciudad_destino}")
                     else:
-                        for transporte in transportes:
-                            if tipo_transporte == "vuelo":
-                                costo = transporte.get("price", {}).get("total", 0)
-                                destino_nombre = ciudad_destino
-                            else:
-                                costo = transporte.get("price", {}).get("total", 0)
-                                destino_nombre = transporte.get("description", "Traslado local")
-
+                        for vuelo in vuelos:
+                            costo = vuelo.get("price", {}).get("total", 0)
                             DetalleItinerario.objects.create(
                                 itinerario=itinerario,
-                                proveedor=proveedor_transporte,
+                                proveedor=proveedor_vuelo,
                                 tipo_item="TRANSPORTE",
                                 origen=origen_actual,
-                                destinos=destino_nombre,
+                                destinos=ciudad_destino,
                                 fecha_salida=fecha_llegada,
                                 fecha_llegada=fecha_llegada,
                                 costo_estimado=costo,
@@ -94,9 +78,9 @@ class GenerarItinerarioView(APIView):
                                 orden=DetalleItinerario.objects.filter(itinerario=itinerario).count() + 1
                             )
                 except Exception as e:
-                    registrar_log(usuario, "ERROR", f"Error al buscar transportes ({tipo_transporte}): {e}")
+                    registrar_log(usuario, "ERROR", f"Error al buscar vuelos: {e}")
 
-                # === 2. Hoteles ===
+                # === 2. HOTELES ===
                 try:
                     hoteles = buscar_hoteles(ciudad_destino, fecha_llegada, fecha_salida, personas)[:3]
                     proveedor_hotel, _ = ProveedorAPI.objects.get_or_create(nombre="Amadeus API", tipo="HOTEL")
@@ -122,7 +106,7 @@ class GenerarItinerarioView(APIView):
                 except Exception as e:
                     registrar_log(usuario, "ERROR", f"Error al buscar hoteles: {e}")
 
-                # === 3. Actividades ===
+                # === 3. ACTIVIDADES ===
                 try:
                     actividades = buscar_actividades(ciudad_destino, fecha_llegada)[:3]
                     proveedor_actividad, _ = ProveedorAPI.objects.get_or_create(nombre="Amadeus API", tipo="ACTIVIDAD")
@@ -134,7 +118,7 @@ class GenerarItinerarioView(APIView):
                             DetalleItinerario.objects.create(
                                 itinerario=itinerario,
                                 proveedor=proveedor_actividad,
-                                tipo_item="ACTIVIDAD",
+                                tipo_item="DESTINO",
                                 origen=ciudad_destino,
                                 destinos=actividad.get("name", "Actividad sin nombre"),
                                 fecha_salida=fecha_llegada,
@@ -147,7 +131,7 @@ class GenerarItinerarioView(APIView):
                 except Exception as e:
                     registrar_log(usuario, "ERROR", f"Error al buscar actividades: {e}")
 
-                # Actualizar punto de origen para el siguiente destino
+                # Actualizar el punto de origen para el siguiente destino
                 origen_actual = ciudad_destino
 
             serializer = ItinerarioSerializer(itinerario)

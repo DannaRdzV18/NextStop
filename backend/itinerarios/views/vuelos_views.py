@@ -29,14 +29,14 @@ class VuelosView(APIView):
             return Response({"error": "Faltan parámetros"}, status=400)
 
         try:
-            itinerario = Itinerario.objects.get(id=id_itinerario, usuario=request.user)
+            itinerario = Itinerario.objects.get(id=id_itinerario)
         except Itinerario.DoesNotExist:
             return Response({"error": "Itinerario no encontrado"}, status=404)
 
         proveedor, _ = ProveedorAPI.objects.get_or_create(nombre="Amadeus API", tipo="VUELO")
         DetalleItinerario.objects.create(
             itinerario=itinerario,
-            proveedor=proveedor,
+            proveedor="VUELO",
             tipo_item="TRANSPORTE",
             origen=vuelo.get("origin", ""),
             destinos=vuelo.get("destination", ""),

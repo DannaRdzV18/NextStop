@@ -72,7 +72,7 @@ class ActivitiesView(APIView):
         try:
             DetalleItinerario.objects.create(
                 itinerario=itinerario,
-                proveedor=proveedor,
+                proveedor="Actividad",
                 tipo_item="DESTINO",
                 nombre_item=actividad.get("name", "Actividad turística"),
                 destinos=actividad.get("city_name", ""),

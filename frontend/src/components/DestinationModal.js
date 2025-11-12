@@ -237,11 +237,12 @@ function DestinationModal({ onClose, addDestination, tripData, totalDays = 0, cu
                     <h4>Vuelos disponibles</h4>
                     {noFlightsMessage && <p className="no-options-msg">{noFlightsMessage}</p>}
                     {flights.map((f, i) => {
-                      const seg = f.itineraries?.[0]?.segments?.[0] || {};
+                      const segment = f.itineraries?.[0]?.segments?.[0] || {};
                       return (
                         <div key={i} className="card">
-                          <p>Aerolínea: {seg.carrierCode} | Vuelo: {seg.number}</p>
-                          <p>{seg.departure?.iataCode} → {seg.arrival?.iataCode}</p>
+                          <p>Aerolínea: {segment.carrierCode} | Vuelo: {segment.number}</p>
+                          <p>{segment.departure.iataCode} → {segment.arrival.iataCode}</p>
+                          <p>Salida: {new Date(segment.departure.at).toLocaleString()} | Llegada: {new Date(segment.arrival.at).toLocaleString()}</p>
                           <p>Duración: {f.itineraries?.[0]?.duration}</p>
                           <p>Precio: {f.price ? convertToMXN(f.price.total, f.price.currency).toFixed(2) + ' MXN' : 'N/A'}</p>
                         </div>
@@ -252,10 +253,12 @@ function DestinationModal({ onClose, addDestination, tripData, totalDays = 0, cu
                   <div className="cards-section">
                     <h4>Hoteles</h4>
                     {noHotelsMessage && <p className="no-options-msg">{noHotelsMessage}</p>}
-                    {hotels.map((h, i) => (
+                    {hotels.length > 0 && hotels.map((h, i) => (
                       <div key={i} className="card">
                         <p>{h.name} ({h.rating}★)</p>
                         <p>Precio por noche: {convertToMXN(h.price, h.currency).toFixed(2)} MXN</p>
+                        <p>Ubicación: {h.city}</p>
+                        <p>Check-in: {h.checkIn || formattedDeparture} | Check-out: {h.checkOut || formattedCheckOut}</p>
                       </div>
                     ))}
                   </div>
@@ -263,10 +266,14 @@ function DestinationModal({ onClose, addDestination, tripData, totalDays = 0, cu
                   <div className="cards-section">
                     <h4>Actividades</h4>
                     {noActivitiesMessage && <p className="no-options-msg">{noActivitiesMessage}</p>}
-                    {activities.map((a, i) => (
+                    {activities.length > 0 && activities.map((a, i) => (
                       <div key={i} className="card">
                         <p>{a.name}</p>
                         <p>Tipo: {a.type || 'N/A'}</p>
+                        <p>Precio: {a.price && a.price !== 'N/A'
+                          ?`${convertToMXN(a.price, a.currency).toFixed(2)} MXN`
+                          : 'N/A'}
+                        </p>
                       </div>
                     ))}
                   </div>
