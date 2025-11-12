@@ -1,3 +1,5 @@
+import os
+
 """
 Django settings for NextStop project.
 
@@ -89,11 +91,14 @@ WSGI_APPLICATION = 'NextStop.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'NextStop',
-        'USER': 'dbrian',
-        'PASSWORD': 'ovR18XhU1ZJdNa',
-        'HOST': 'localhost',
-        'PORT': '3306',
+        'NAME': os.getenv('DATABASE_NAME', 'nextstop_db'),
+        'USER': os.getenv('DATABASE_USER', 'root'),
+        'PASSWORD': os.getenv('DATABASE_PASSWORD', 'tu_password'),
+        'HOST': os.getenv('DATABASE_HOST', 'localhost'),
+        'PORT': os.getenv('DATABASE_PORT', '3306'),
+        'OPTIONS': {
+            'charset': 'utf8mb4',
+        }
     }
 }
 
