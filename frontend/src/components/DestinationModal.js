@@ -5,6 +5,7 @@ import { convertToMXN } from '../utils/convertToMXN';
 
 function DestinationModal({ onClose, addDestination, tripData, totalDays = 0, currentDestinations = [] }) {
   const [destination, setDestination] = useState('');
+  const [displayName, setDisplayName] = useState('');
   const [days, setDays] = useState('');
   const [showOptions, setShowOptions] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
@@ -33,30 +34,32 @@ function DestinationModal({ onClose, addDestination, tripData, totalDays = 0, cu
   const formattedCheckOut = salida.toISOString().split("T")[0];
 
   useEffect(() => {
-    const fetchSuggestions = async () => {
-      if (destination.length < 2) {
-        setSuggestions([]);
-        return;
-      }
-      setLoadingSuggestions(true);
-      try {
-        const res = await fetch(`http://localhost:8000/api/external/locations/?query=${destination}`);
-        if (!res.ok) throw new Error('Error');
-        const data = await res.json();
-        setSuggestions(data);
-      } catch (err) {
-        console.error(err);
-        setSuggestions([]);
-      } finally {
-        setLoadingSuggestions(false);
-      }
-    };
-    const timer = setTimeout(fetchSuggestions, 300);
-    return () => clearTimeout(timer);
-  }, [destination]);
+      const fetchSuggestions = async () => {
+        if (displayName.length < 2) {
+          setSuggestions([]);
+          return;
+        }
+        setLoadingSuggestions(true);
+        try {
+          const res = await fetch(`http://localhost:8000/api/external/locations/?query=${encodeURIComponent(displayName)}`);
+          if (!res.ok) throw new Error('Error');
+          const data = await res.json();
+          setSuggestions(data);
+        } catch (err) {
+          console.error(err);
+          setSuggestions([]);
+        } finally {
+          setLoadingSuggestions(false);
+        }
+      };
+
+  const timer = setTimeout(fetchSuggestions, 300);
+  return () => clearTimeout(timer);
+}, [displayName]);
 
   const handleSelectSuggestion = (item) => {
-    setDestination(item.nombre || item.codigo || '');
+    setDestination(item.codigo||'');
+    setDisplayName(item.nombre|| item.codigo ||'');
     setSuggestions([]);
   };
 
@@ -178,8 +181,11 @@ function DestinationModal({ onClose, addDestination, tripData, totalDays = 0, cu
                 <input
                   type="text"
                   placeholder="Buscar destino..."
-                  value={destination}
-                  onChange={(e) => setDestination(e.target.value)}
+                  value={displayName}
+                  onChange={(e) => {
+                    setDisplayName(e.target.value);
+                    setDestination('');
+                  }}
                   className="input-field"
                 />
                 {loadingSuggestions && <p>Cargando...</p>}
