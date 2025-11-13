@@ -28,7 +28,7 @@ function LoginModal({ onClose, onLogin }) {
     const [contador, setContador] = useState(0);
     const [reenviando, setReenviando] = useState(false);
 
-    const API_URL = 'http://127.0.0.1:8000/api/usuarios/';
+    const API_URL = 'https://nextstop-app-u9cvd.ondigitalocean.app/api/usuarios/';
 
     // ⏱ Control del contador
     useEffect(() => {

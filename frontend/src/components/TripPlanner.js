@@ -108,7 +108,7 @@ function TripPlanner() {
     }
     try {
       setIsLoadingOrigin(true);
-      const response = await fetch(`http://localhost:8000/api/external/locations/?query=${query}`);
+      const response = await fetch(`https://nextstop-app-u9cvd.ondigitalocean.app/api/external/locations/?query=${query}`);
       const data = await response.json();
       setOriginSuggestions(data);
     } catch (error) {

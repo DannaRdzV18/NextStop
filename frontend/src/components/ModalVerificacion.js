@@ -20,7 +20,7 @@ function ModalVerificacion({ estado, mensaje, onClose }) {
     }
 
     try {
-      const response = await axios.post('http://127.0.0.1:8000/api/usuarios/reenviar-codigo/', { email });
+      const response = await axios.post('https://nextstop-app-u9cvd.ondigitalocean.app/api/usuarios/reenviar-codigo/', { email });
 
       // Mensaje exitoso desde el backend
       if (response.data.mensaje) {

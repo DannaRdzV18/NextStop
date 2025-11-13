@@ -41,7 +41,7 @@ function DestinationModal({ onClose, addDestination, tripData, totalDays = 0, cu
         }
         setLoadingSuggestions(true);
         try {
-          const res = await fetch(`http://localhost:8000/api/external/locations/?query=${encodeURIComponent(displayName)}`);
+          const res = await fetch(`https://nextstop-app-u9cvd.ondigitalocean.app/api/external/locations/?query=${encodeURIComponent(displayName)}`);
           if (!res.ok) throw new Error('Error');
           const data = await res.json();
           setSuggestions(data);
@@ -75,7 +75,7 @@ function DestinationModal({ onClose, addDestination, tripData, totalDays = 0, cu
 
     try {
       const flightRes = await fetch(
-        `http://localhost:8000/api/external/vuelos/?origen=${encodeURIComponent(origin)}&destino=${encodeURIComponent(destination)}&fecha_salida=${formattedDeparture}`
+        `https://nextstop-app-u9cvd.ondigitalocean.app/api/external/vuelos/?origen=${encodeURIComponent(origin)}&destino=${encodeURIComponent(destination)}&fecha_salida=${formattedDeparture}`
       );
       if (flightRes.ok) {
         const flightData = await flightRes.json();
@@ -85,7 +85,7 @@ function DestinationModal({ onClose, addDestination, tripData, totalDays = 0, cu
       }
 
       const hotelRes = await fetch(
-        `http://localhost:8000/api/external/hoteles/?ciudad=${encodeURIComponent(destination)}&fecha_entrada=${formattedDeparture}&fecha_salida=${formattedCheckOut}&personas=${totalPeople}`
+        `https://nextstop-app-u9cvd.ondigitalocean.app/api/external/hoteles/?ciudad=${encodeURIComponent(destination)}&fecha_entrada=${formattedDeparture}&fecha_salida=${formattedCheckOut}&personas=${totalPeople}`
       );
       if (hotelRes.ok) {
         const hotelData = await hotelRes.json();
@@ -95,7 +95,7 @@ function DestinationModal({ onClose, addDestination, tripData, totalDays = 0, cu
       }
 
       const actRes = await fetch(
-        `http://localhost:8000/api/external/activities/?ciudad=${encodeURIComponent(destination)}&fecha_inicio=${formattedDeparture}`
+        `https://nextstop-app-u9cvd.ondigitalocean.app/api/external/activities/?ciudad=${encodeURIComponent(destination)}&fecha_inicio=${formattedDeparture}`
       );
       if (actRes.ok) {
         const actData = await actRes.json();
@@ -150,7 +150,7 @@ function DestinationModal({ onClose, addDestination, tripData, totalDays = 0, cu
       };
 
       try {
-        const res = await fetch('http://localhost:8000/api/itinerarios/agregar-destino/', {
+        const res = await fetch('https://nextstop-app-u9cvd.ondigitalocean.app/api/itinerarios/agregar-destino/', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
