@@ -91,8 +91,8 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': os.getenv('DATABASE_NAME', 'nextstop_db'),
-        'USER': os.getenv('DATABASE_USER', 'root'),
-        'PASSWORD': os.getenv('DATABASE_PASSWORD', 'tu_password'),
+        'USER': os.getenv('DATABASE_USER', 'dbrian'),
+        'PASSWORD': os.getenv('DATABASE_PASSWORD', 'ovR18XhU1ZJdNa'),
         'HOST': os.getenv('DATABASE_HOST', 'localhost'),
         'PORT': os.getenv('DATABASE_PORT', '3306'),
         'OPTIONS': {
