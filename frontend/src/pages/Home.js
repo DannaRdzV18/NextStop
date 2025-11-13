@@ -22,7 +22,7 @@ function Home() {
     setMostrarModal(true);
 
     // Limpia la URL
-    window.history.replaceState({}, document.title, '/');
+    window.history.replaceState({}, document.title, window.location.pathname);
   }
 }, []);
 

@@ -8,7 +8,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
 function App() {
   return (
-    <Router>
+    <Router basename="/nextstop-frontend2">
       <div className="App">
         <Navbar />
         <Routes>
