@@ -29,7 +29,7 @@ SECRET_KEY = 'django-insecure-3+9%4%w75sp^i&&12i9%i5jhmp-70=85u6_+smfe-6lvbp9$8u
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['nextstop-app-u9cvd.ondigitalocean.app', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['nextstop-app-u9cvd.ondigitalocean.app', 'localhost', '127.0.0.1', 'nextstopitver.app']
 
 # Application definition
 
