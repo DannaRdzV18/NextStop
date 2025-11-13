@@ -172,6 +172,6 @@ AMADEUS_API_SECRET = os.getenv('AMADEUS_API_SECRET')
 # 🛡 HTTPS (producción)
 # ==========================
 if not DEBUG:
-    SECURE_SSL_REDIRECT = True
+    SECURE_SSL_REDIRECT = False
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
