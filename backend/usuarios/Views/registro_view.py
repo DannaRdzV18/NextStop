@@ -52,7 +52,7 @@ class RegistroUsuarioView(APIView):
             )
 
             # Construir enlace de verificación
-            link_verificacion = f'http://127.0.0.1:8000/api/usuarios/verificar-link/{token}/'
+            link_verificacion = f'https://nextstop-app-u9cvd.ondigitalocean.app/api/usuarios/verificar-link/{token}/'
             tiempo = 1  # minutos
 
             # Mensaje de correo
