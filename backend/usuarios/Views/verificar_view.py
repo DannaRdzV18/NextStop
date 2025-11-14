@@ -111,19 +111,19 @@ class VerificarLinkView(APIView):
             verificacion = Verificacion.objects.get(token=token)
         except Verificacion.DoesNotExist:
             # Redirige al frontend con estado "expirado"
-            return redirect("http://localhost:3000/?estado=expirado&mensaje=Token%20inválido%20o%20no%20encontrado")
+            return redirect("https://nextstop-app-u9cvd.ondigitalocean.app/?estado=expirado&mensaje=Token%20inválido%20o%20no%20encontrado")
 
         usuario = verificacion.usuario
 
         # Si el correo ya estaba verificado
         if usuario.email_verificado:
-            return redirect(f"http://localhost:3000/?estado=exito&mensaje=El%20correo%20{usuario.email}%20ya%20estaba%20verificado")
+            return redirect(f"https://nextstop-app-u9cvd.ondigitalocean.app/?estado=exito&mensaje=El%20correo%20{usuario.email}%20ya%20estaba%20verificado")
 
         # Si está expirado
         if verificacion.expirado():
             verificacion.usado = True
             verificacion.save()
-            return redirect("http://localhost:3000/?estado=expirado&mensaje=El%20enlace%20ha%20expirado%20o%20ya%20fue%20usado")
+            return redirect("https://nextstop-app-u9cvd.ondigitalocean.app/?estado=expirado&mensaje=El%20enlace%20ha%20expirado%20o%20ya%20fue%20usado")
 
         # Si es válido, marcar como verificado
         usuario.email_verificado = True
@@ -131,4 +131,4 @@ class VerificarLinkView(APIView):
         verificacion.usado = True
         verificacion.save()
 
-        return redirect(f"http://localhost:3000/?estado=exito&mensaje=El%20correo%20{usuario.email}%20ha%20sido%20verificado%20exitosamente")
+        return redirect(f"https://nextstop-app-u9cvd.ondigitalocean.app/?estado=exito&mensaje=El%20correo%20{usuario.email}%20ha%20sido%20verificado%20exitosamente")
