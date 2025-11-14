@@ -8,7 +8,7 @@ import { IoLocationSharp, IoPeople } from 'react-icons/io5';
 import { MdCalendarToday } from 'react-icons/md';
 import { RiMoneyDollarCircleFill } from 'react-icons/ri';
 import DestinationModal from './DestinationModal';
-import FinalItineraryModal from './FinalItineraryModal'; // 🔹 Nuevo modal final
+import FinalItineraryModal from './FinalItineraryModal';
 
 registerLocale('es', es);
 

@@ -238,7 +238,7 @@ function LoginModal({ onClose, onLogin }) {
                         {/* 🧩 reCAPTCHA LOGIN */}
                         <div style={{ margin: '15px 0', textAlign: 'center' }}>
                             <ReCAPTCHA
-                                sitekey="6LeIrwssAAAAAKD_R7ProxgZCN9bFvp4yyL7EPz4"  // 👈 cambia este por tu clave de sitio
+                                sitekey="6LeIrwssAAAAAEGMhSaYATcyWOjw4_HxAavM31E9"  // 👈 cambia este por tu clave de sitio
                                 onChange={(token) => setRecaptchaToken(token)}
                                 onExpired={() => setRecaptchaToken(null)}
                             />
@@ -366,7 +366,7 @@ function LoginModal({ onClose, onLogin }) {
                         {/* 🧩 reCAPTCHA */}
                         <div style={{ margin: '15px 0', textAlign: 'center' }}>
                             <ReCAPTCHA
-                                sitekey="6LeIrwssAAAAAKD_R7ProxgZCN9bFvp4yyL7EPz4"
+                                sitekey="6LeIrwssAAAAAEGMhSaYATcyWOjw4_HxAavM31E9"
                                 onChange={(token) => setRecaptchaToken(token)}
                                 onExpired={() => setRecaptchaToken(null)}
                             />
