@@ -15,89 +15,44 @@ function FinalItineraryModal({ onClose, tripData }) {
   const { destinations = [], budget = 0, origin = "", userName = "Usuario" } =
     tripData;
 
-  const GOOGLE_KEY = "AQUI_VA_TU_API_KEY_REAL";
-
   // ============================================================
-  //          FUNCIÓN CORREGIDA PARA GENERAR EL PDF
+  //             FUNCIÓN PARA GENERAR PDF (SIN IFRAMES)
   // ============================================================
   const handleDownloadPDF = async () => {
     const input = document.getElementById("final-itinerary");
     if (!input) return;
 
-    const iframes = Array.from(input.querySelectorAll("iframe"));
-    const originalDisplays = iframes.map((f) => f.style.display);
-
     try {
-      iframes.forEach((f) => (f.style.display = "none"));
-      await new Promise((resolve) => requestAnimationFrame(resolve));
-
-      const scale = 2;
-      let canvas;
-
-      try {
-        canvas = await html2canvas(input, {
-          scale,
-          useCORS: true,
-          scrollY: -window.scrollY,
-          windowWidth: input.scrollWidth,
-          windowHeight: input.scrollHeight,
-        });
-      } catch (err) {
-        console.error("html2canvas error:", err);
-        alert("No fue posible generar el PDF. Revisa la consola para más detalles.");
-        return;
-      }
+      const canvas = await html2canvas(input, {
+        scale: 2,
+        useCORS: true,
+        scrollY: -window.scrollY,
+      });
 
       const pdf = new jsPDF("p", "mm", "a4");
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
 
-      const pxPerMm = canvas.width / pdfWidth;
-      const pageHeightPx = Math.floor(pdfHeight * pxPerMm);
+      const imgData = canvas.toDataURL("image/png");
+      const imgWidth = pdfWidth;
+      const imgHeight = (canvas.height * pdfWidth) / canvas.width;
 
-      let y = 0;
-      let pageIndex = 0;
-
-      while (y < canvas.height) {
-        const pageCanvas = document.createElement("canvas");
-        pageCanvas.width = canvas.width;
-        pageCanvas.height = Math.min(pageHeightPx, canvas.height - y);
-
-        const pageCtx = pageCanvas.getContext("2d");
-        pageCtx.drawImage(
-          canvas,
-          0,
-          y,
-          canvas.width,
-          pageCanvas.height,
-          0,
-          0,
-          pageCanvas.width,
-          pageCanvas.height
-        );
-
-        const imgData = pageCanvas.toDataURL("image/png");
-        const imgHeightMm = (pageCanvas.height * pdfWidth) / canvas.width;
-
-        if (pageIndex > 0) pdf.addPage();
-        pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, imgHeightMm);
-
-        y += pageHeightPx;
-        pageIndex++;
-      }
-
+      pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
       pdf.save("Itinerario.pdf");
-    } finally {
-      iframes.forEach((f, i) => (f.style.display = originalDisplays[i] || ""));
-      if (typeof onClose === "function") onClose();
+    } catch (err) {
+      console.error("Error generando el PDF:", err);
+      alert("Ocurrió un error al generar el PDF.");
     }
+
+    if (typeof onClose === "function") onClose();
   };
 
-  const calcularCostoTotal = () =>
-    Number(budget).toLocaleString("es-MX", {
+  const calcularCostoTotal = () => {
+    return Number(budget).toLocaleString("es-MX", {
       style: "currency",
       currency: "MXN",
     });
+  };
 
   return (
     <div className="final-itinerary-overlay" onClick={onClose}>
@@ -116,7 +71,7 @@ function FinalItineraryModal({ onClose, tripData }) {
             <hr className="sidebar-divider" />
             <FaGlobeAmericas size={40} className="globe-icon" />
             <p className="globe-text">
-              ¡NextStop dándote la mejor organización para tus viajes!
+              ¡NextStop organizando tu viaje a la perfección!
             </p>
           </div>
 
@@ -138,7 +93,7 @@ function FinalItineraryModal({ onClose, tripData }) {
                     </div>
 
                     <p className="day-description">
-                      <strong>Días:</strong> {destino.dias} <br />
+                      <strong>Días:</strong> {destino.dias || "N/A"} <br />
                       <strong>Hotel:</strong>{" "}
                       {hotel?.name
                         ? `${hotel.name} (${hotel.rating || "N/A"}★)`
@@ -146,34 +101,36 @@ function FinalItineraryModal({ onClose, tripData }) {
                       <br />
                       <strong>Precio por noche:</strong>{" "}
                       {hotel?.price
-                        ? `${hotel.price.toFixed(2)} ${hotel.currency || "MXN"}`
+                        ? `${hotel.price.toFixed(2)} ${
+                            hotel.currency || "MXN"
+                          }`
                         : "N/A"}
                       <br />
                       <strong>Actividad recomendada:</strong>{" "}
                       {actividad?.name || "No seleccionada"}
                       <br />
-                      {actividad?.duration && (
-                        <>
-                          <strong>Duración:</strong> {actividad.duration}
-                          <br />
-                        </>
-                      )}
 
+                      {/* Vuelos */}
                       {vuelo.origen || vuelo.destino ? (
                         <div className="flight-info">
                           <div className="flight-title">
                             <FaPlaneDeparture /> &nbsp;
                             <strong>Vuelos</strong>
                           </div>
+
                           <p>
                             <FaPlaneDeparture className="flight-icon" />{" "}
-                            <strong>Salida:</strong> {vuelo.origen || "N/A"}{" "}
+                            <strong>Salida:</strong>{" "}
+                            {vuelo.origen || "No especificado"}{" "}
                             {vuelo.horaSalida && `(${vuelo.horaSalida})`}
                             <br />
+
                             <FaPlaneArrival className="flight-icon" />{" "}
-                            <strong>Llegada:</strong> {vuelo.destino || "N/A"}{" "}
+                            <strong>Llegada:</strong>{" "}
+                            {vuelo.destino || "No especificado"}{" "}
                             {vuelo.horaLlegada && `(${vuelo.horaLlegada})`}
                             <br />
+
                             {vuelo.aerolinea && (
                               <>
                                 <strong>Aerolínea:</strong> {vuelo.aerolinea}
@@ -194,38 +151,20 @@ function FinalItineraryModal({ onClose, tripData }) {
           {/* Columna derecha */}
           <div className="itinerary-summary">
             <h3>Resumen del viaje</h3>
+
             <p>
               <strong>Origen:</strong> {origin || "No especificado"}
             </p>
+
             <p>
               <strong>Total de destinos:</strong> {destinations.length}
             </p>
+
             <p className="total-cost">{calcularCostoTotal()}</p>
 
-            {/* MAPA (URL CORREGIDA SIN SALTOS DE LÍNEA) */}
+            {/* SIN MAPA */}
             <div className="map-container">
-              {destinations.length > 0 ? (
-                <iframe
-                  title="Mapa del recorrido"
-                  width="100%"
-                  height="250"
-                  style={{ borderRadius: "12px", border: 0 }}
-                  src={`https://www.google.com/maps/embed/v1/directions?key=${GOOGLE_KEY}&origin=${encodeURIComponent(
-                    origin || destinations[0]?.nombre
-                  )}&destination=${encodeURIComponent(
-                    destinations[destinations.length - 1]?.nombre
-                  )}&waypoints=${encodeURIComponent(
-                    destinations
-                      .slice(1, destinations.length - 1)
-                      .map((d) => d.nombre)
-                      .join("|")
-                  )}`}
-                  allowFullScreen
-                  loading="lazy"
-                ></iframe>
-              ) : (
-                <p>No hay destinos para mostrar en el mapa.</p>
-              )}
+              <p>Ruta del viaje no disponible (mapa desactivado).</p>
             </div>
 
             <button className="save-close-btn" onClick={handleDownloadPDF}>
