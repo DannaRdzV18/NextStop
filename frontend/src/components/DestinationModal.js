@@ -21,6 +21,12 @@ function DestinationModal({ onClose, addDestination, tripData, totalDays = 0, cu
   const [noActivitiesMessage, setNoActivitiesMessage] = useState('');
   const [error, setError] = useState('');
 
+  // ⭐ AÑADIDO — Estados para selección
+  const [selectedFlight, setSelectedFlight] = useState(null);
+  const [selectedHotel, setSelectedHotel] = useState(null);
+  const [selectedActivity, setSelectedActivity] = useState(null);
+
+
   const formatDate = (date) => {
     if (!date) return "";
     const d = new Date(date);
@@ -141,8 +147,17 @@ function DestinationModal({ onClose, addDestination, tripData, totalDays = 0, cu
         return;
       }
 
-      const newDestination = { nombre: destination, dias: Number(days), flights, hotels, activities };
-
+// ⭐ CAMBIADO — ahora incluye seleccionados
+    const newDestination = { 
+      nombre: destination, 
+      dias: Number(days), 
+      flights, 
+      hotels, 
+      activities,
+      selectedFlight: selectedFlight !== null ? flights[selectedFlight] : null,
+      selectedHotel: selectedHotel !== null ? hotels[selectedHotel] : null,
+      selectedActivity: selectedActivity !== null ? activities[selectedActivity] : null
+    };
       // Aquí construyes el payload
       const payload = {
         id_itinerario: tripData.itineraryId, // asegúrate de tener el id del itinerario
@@ -179,11 +194,28 @@ function DestinationModal({ onClose, addDestination, tripData, totalDays = 0, cu
       setError(`Solo te quedan ${remaining} días disponibles.`);
       return;
     }
-    const newDestination = { nombre: destination, dias: Number(days), flights, hotels, activities };
-    if (addDestination) addDestination(newDestination);
-    const nuevoUsado = usedDays + Number(days);
-    if (nuevoUsado >= totalDays) { onClose && onClose(); return; }
-    setDestination(''); setDays(''); setFlights([]); setHotels([]); setActivities([]); setShowOptions(false);
+    // ⭐ CAMBIADO — incluye seleccionados
+    const newDestination = { 
+      nombre: destination, 
+      dias: Number(days), 
+      flights, 
+      hotels, 
+      activities,
+      selectedFlight: selectedFlight !== null ? flights[selectedFlight] : null,
+      selectedHotel: selectedHotel !== null ? hotels[selectedHotel] : null,
+      selectedActivity: selectedActivity !== null ? activities[selectedActivity] : null
+    };
+     if (addDestination) addDestination(newDestination);
+
+    setDestination('');
+    setDays('');
+    setFlights([]); setHotels([]); setActivities([]);
+      // ⭐ AÑADIDO — reset selección
+    setSelectedFlight(null);
+    setSelectedHotel(null);
+    setSelectedActivity(null);
+
+    setShowOptions(false);
   };
 
   // 🔹 Cálculo para mostrar botones correctos
@@ -252,54 +284,63 @@ function DestinationModal({ onClose, addDestination, tripData, totalDays = 0, cu
                 </a>
               </div>
             </div>
+            
           ) : (
+
             <div className="options-section">
               {loadingOptions ? <p>Cargando opciones...</p> : (
                 <>
-                  <div className="cards-section">
-                    <h4>Vuelos disponibles</h4>
-                    {noFlightsMessage && <p className="no-options-msg">{noFlightsMessage}</p>}
-                    {flights.map((f, i) => {
-                      const segment = f.itineraries?.[0]?.segments?.[0] || {};
-                      return (
-                        <div key={i} className="card">
-                          <p>Aerolínea: {segment.carrierCode} | Vuelo: {segment.number}</p>
-                          <p>{segment.departure.iataCode} → {segment.arrival.iataCode}</p>
-                          <p>Salida: {new Date(segment.departure.at).toLocaleString()} | Llegada: {new Date(segment.arrival.at).toLocaleString()}</p>
-                          <p>Duración: {f.itineraries?.[0]?.duration}</p>
-                          <p>Precio: {f.price ? convertToMXN(f.price.total, f.price.currency).toFixed(2) + ' MXN' : 'N/A'}</p>
-                        </div>
-                      );
-                    })}
+                   {/* ⭐⭐ VUELOS — ahora seleccionables */}
+            <div className="cards-section">
+              <h4>Vuelos disponibles</h4>
+              {flights.map((f, i) => {
+                const segment = f.itineraries?.[0]?.segments?.[0] || {};
+                return (
+                  <div
+                    key={i}
+                    className={`card ${selectedFlight === i ? "selected" : ""}`}
+                    onClick={() => setSelectedFlight(i)}
+                  >
+                    <p>Aerolínea: {segment.carrierCode}</p>
+                    <p>{segment.departure.iataCode} → {segment.arrival.iataCode}</p>
                   </div>
-
-                  <div className="cards-section">
-                    <h4>Hoteles</h4>
-                    {noHotelsMessage && <p className="no-options-msg">{noHotelsMessage}</p>}
-                    {hotels.length > 0 && hotels.map((h, i) => (
-                      <div key={i} className="card">
-                        <p>{h.name} ({h.rating}★)</p>
-                        <p>Precio por noche: {convertToMXN(h.price, h.currency).toFixed(2)} MXN</p>
-                        <p>Ubicación: {h.city}</p>
-                        <p>Check-in: {h.checkIn || formattedDeparture} | Check-out: {h.checkOut || formattedCheckOut}</p>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="cards-section">
-                    <h4>Actividades</h4>
-                    {noActivitiesMessage && <p className="no-options-msg">{noActivitiesMessage}</p>}
-                    {activities.length > 0 && activities.map((a, i) => (
-                      <div key={i} className="card">
-                        <p>{a.name}</p>
-                        <p>Tipo: {a.type || 'N/A'}</p>
-                        <p>Precio: {a.price && a.price !== 'N/A'
-                          ?`${convertToMXN(a.price, a.currency).toFixed(2)} MXN`
-                          : 'N/A'}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
+                );
+              })}
+              {/* ⭐ MENSAJE SI NO HAY VUELOS ⭐ */}
+  {noFlightsMessage && <p className="no-options">{noFlightsMessage}</p>}
+            </div>
+                  {/* ⭐⭐ HOTELES — seleccionables */}
+            <div className="cards-section">
+              <h4>Hoteles</h4>
+              {hotels.map((h, i) => (
+                <div
+                  key={i}
+                  className={`card ${selectedHotel === i ? "selected" : ""}`}
+                  onClick={() => setSelectedHotel(i)}
+                >
+                  <p>{h.name}</p>
+                  <p>{h.rating}★</p>
+                </div>
+              ))}
+               {/* ⭐ MENSAJE SI NO HAY HOTELES ⭐ */}
+  {noHotelsMessage && <p className="no-options">{noHotelsMessage}</p>}
+            </div>
+                   {/* ⭐⭐ ACTIVIDADES — seleccionables */}
+            <div className="cards-section">
+              <h4>Actividades</h4>
+              {activities.map((a, i) => (
+                <div
+                  key={i}
+                  className={`card ${selectedActivity === i ? "selected" : ""}`}
+                  onClick={() => setSelectedActivity(i)}
+                >
+                  <p>{a.name}</p>
+                  <p>Tipo: {a.type}</p>
+                </div>
+              ))}
+                {/* ⭐ MENSAJE SI NO HAY ACTIVIDADES ⭐ */}
+  {noActivitiesMessage && <p className="no-options">{noActivitiesMessage}</p>}
+            </div>
                 </>
               )}
             </div>
