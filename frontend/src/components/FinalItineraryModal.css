@@ -1,3 +1,4 @@
+/* 🔹 OVERLAY (Fondo del modal) */
 .final-itinerary-overlay {
   position: fixed;
   inset: 0;
@@ -5,9 +6,10 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 999;
+  z-index: 999999 !important; /* 🔥 Asegura que SIEMPRE quede encima */
 }
 
+/* 🔹 CONTENEDOR DEL MODAL */
 .final-itinerary-modal {
   background: #fff;
   border-radius: 12px;
@@ -17,20 +19,24 @@
   overflow-y: auto;
   padding: 20px 30px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  z-index: 1000000 !important; /* 🔥 Más alto que el overlay */
 }
 
+/* 🔹 TITULO */
 .itinerary-title {
   font-size: 1.8rem;
   font-weight: 800;
   margin-bottom: 15px;
 }
 
+/* 🔹 LAYOUT PRINCIPAL */
 .itinerary-content {
   display: grid;
   grid-template-columns: 1fr 2fr 1fr;
   gap: 20px;
 }
 
+/* 🔹 SIDEBAR IZQUIERDO */
 .itinerary-sidebar {
   background-color: #9ab47e;
   border-radius: 8px;
@@ -54,6 +60,7 @@
   margin-bottom: 20px;
 }
 
+/* 🔹 SIDEBAR DERECHO */
 .globe-icon {
   color: #365a28;
   margin-bottom: 10px;
@@ -64,6 +71,7 @@
   color: #1d381a;
 }
 
+/* 🔹 DÍAS DEL ITINERARIO */
 .itinerary-days {
   display: flex;
   flex-direction: column;
@@ -95,6 +103,7 @@
   line-height: 1.3;
 }
 
+/* 🔹 RESUMEN */
 .itinerary-summary {
   display: flex;
   flex-direction: column;
@@ -114,6 +123,7 @@
   margin-bottom: 20px;
 }
 
+/* 🔹 BOTÓN GUARDAR / CERRAR */
 .save-close-btn {
   background-color: #6d9442;
   color: #fff;
@@ -129,9 +139,7 @@
   background-color: #577732;
 }
 
-
-
-/* 🔹 Estilo para el bloque de vuelos */
+/* 🔹 INFORMACIÓN DE VUELOS */
 .flight-info {
   background-color: #e5edd1;
   border-radius: 6px;
