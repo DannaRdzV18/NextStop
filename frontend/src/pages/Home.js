@@ -4,54 +4,36 @@ import './Home.css';
 import TripPlanner from '../components/TripPlanner';
 import DestinationCard from '../components/DestinationCard';
 import ModalVerificacion from '../components/ModalVerificacion';
-import FinalItinerary from '../components/FinalItinerary';
 import avionGif from '../assets/images/icono_viaje.gif';
+
 
 function Home() {
   const [mostrarModal, setMostrarModal] = useState(false);
-  const [modalEstado, setModalEstado] = useState('');
+  const [modalEstado, setModalEstado] = useState(''); // "exito" | "expirado"
   const [mensajeModal, setMensajeModal] = useState('');
 
-  // 🔹 Estado para mostrar el itinerario final
-  const [tripData, setTripData] = useState(null);
-  const [mostrarItinerario, setMostrarItinerario] = useState(false);
-
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const estado = params.get('estado');
-    const mensaje = params.get('mensaje');
+  const params = new URLSearchParams(window.location.search);
+  const estado = params.get('estado');
+  const mensaje = params.get('mensaje');
 
-    if (estado) {
-      setModalEstado(estado);
-      setMensajeModal(decodeURIComponent(mensaje));
-      setMostrarModal(true);
+  if (estado) {
+    setModalEstado(estado);
+    setMensajeModal(decodeURIComponent(mensaje));
+    setMostrarModal(true);
 
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
-  }, []);
-
-  // 🔹 Función que recibe los datos finales desde TripPlanner
-  const handleTripCompleted = (data) => {
-    setTripData(data);
-    setMostrarItinerario(true);
-  };
+    // Limpia la URL
+    window.history.replaceState({}, document.title, window.location.pathname);
+  }
+}, []);
 
   return (
     <div className="home">
-      {/* MODAL DE VERIFICACIÓN */}
       {mostrarModal && (
         <ModalVerificacion
           estado={modalEstado}
           mensaje={mensajeModal}
           onClose={() => setMostrarModal(false)}
-        />
-      )}
-
-      {/* 🔹 MODAL DE ITINERARIO FINAL */}
-      {mostrarItinerario && tripData && (
-        <FinalItinerary
-          tripData={tripData}
-          onClose={() => setMostrarItinerario(false)}
         />
       )}
 
@@ -61,9 +43,7 @@ function Home() {
             <h1>Planificador de viajes rápido y sencillo</h1>
             <p>Elige un estilo y descubre los principales destinos en el mundo</p>
           </div>
-
-          {/* 🔹 Hasta ahora TripPlanner NO enviaba la señal. Ya está corregido */}
-          <TripPlanner onTripCompleted={handleTripCompleted} />
+          <TripPlanner />
         </div>
 
         <div className="right-section">
