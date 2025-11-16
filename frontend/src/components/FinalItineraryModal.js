@@ -1,78 +1,97 @@
 import React from "react";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
-import { FaFlag, FaGlobeAmericas, FaPlaneDeparture, FaPlaneArrival } from "react-icons/fa";
+import {
+  FaFlag,
+  FaGlobeAmericas,
+  FaPlaneDeparture,
+  FaPlaneArrival,
+} from "react-icons/fa";
 import "./FinalItineraryModal.css";
 
 function FinalItineraryModal({ onClose, tripData }) {
   if (!tripData) return null;
 
-  const { destinations = [], budget = 0, origin = "", userName = "Usuario" } = tripData;
+  const { destinations = [], budget = 0, origin = "", userName = "Usuario" } =
+    tripData;
 
+  // ============================================================
+  //          FUNCIÓN CORREGIDA PARA GENERAR EL PDF
+  // ============================================================
   const handleDownloadPDF = async () => {
-  const input = document.getElementById("final-itinerary");
-  if (!input) return;
+    const input = document.getElementById("final-itinerary");
+    if (!input) return;
 
-  // Genera el canvas completo con buena calidad
-  const scale = 2;
-  const canvas = await html2canvas(input, {
-    scale,
-    useCORS: true,
-    scrollY: -window.scrollY,
-    windowWidth: input.scrollWidth,
-    windowHeight: input.scrollHeight,
-  });
+    // Ocultar iframes temporalmente (Google Maps causa errores CORS)
+    const iframes = Array.from(input.querySelectorAll("iframe"));
+    const originalDisplays = iframes.map((f) => f.style.display);
 
-  const pdf = new jsPDF("p", "mm", "a4");
-  const pdfWidth = pdf.internal.pageSize.getWidth();
-  const pdfHeight = pdf.internal.pageSize.getHeight();
+    try {
+      iframes.forEach((f) => (f.style.display = "none"));
+      await new Promise((resolve) => requestAnimationFrame(resolve));
 
-  // Calcula cuántos píxeles del canvas representan la altura de una página PDF
-  // ratio = px_per_mm = canvas.width / pdfWidth (px per mm)
-  const pxPerMm = canvas.width / pdfWidth;
-  const pageHeightPx = Math.floor(pdfHeight * pxPerMm);
+      const scale = 2;
+      let canvas;
 
-  let y = 0;
-  let pageIndex = 0;
+      try {
+        canvas = await html2canvas(input, {
+          scale,
+          useCORS: true,
+          scrollY: -window.scrollY,
+          windowWidth: input.scrollWidth,
+          windowHeight: input.scrollHeight,
+        });
+      } catch (err) {
+        console.error("html2canvas error:", err);
+        alert("No fue posible generar el PDF. Revisa la consola para más detalles.");
+        return;
+      }
 
-  while (y < canvas.height) {
-    // crea canvas temporal que contendrá solo la "porción de página"
-    const pageCanvas = document.createElement("canvas");
-    pageCanvas.width = canvas.width;
-    pageCanvas.height = Math.min(pageHeightPx, canvas.height - y);
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
 
-    const pageCtx = pageCanvas.getContext("2d");
-    // dibuja la porción correspondiente del canvas grande en el canvas de página
-    pageCtx.drawImage(
-      canvas,
-      0,          // sx
-      y,          // sy
-      canvas.width,        // sWidth
-      pageCanvas.height,   // sHeight
-      0,          // dx
-      0,          // dy
-      pageCanvas.width,    // dWidth
-      pageCanvas.height    // dHeight
-    );
+      const pxPerMm = canvas.width / pdfWidth;
+      const pageHeightPx = Math.floor(pdfHeight * pxPerMm);
 
-    const imgData = pageCanvas.toDataURL("image/png");
+      let y = 0;
+      let pageIndex = 0;
 
-    // Calcula la altura en mm que ocupará esta imagen en el PDF
-    const imgHeightMm = (pageCanvas.height * pdfWidth) / canvas.width;
+      while (y < canvas.height) {
+        const pageCanvas = document.createElement("canvas");
+        pageCanvas.width = canvas.width;
+        pageCanvas.height = Math.min(pageHeightPx, canvas.height - y);
 
-    if (pageIndex > 0) pdf.addPage();
-    pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, imgHeightMm);
+        const pageCtx = pageCanvas.getContext("2d");
+        pageCtx.drawImage(
+          canvas,
+          0,
+          y,
+          canvas.width,
+          pageCanvas.height,
+          0,
+          0,
+          pageCanvas.width,
+          pageCanvas.height
+        );
 
-    y += pageHeightPx;
-    pageIndex += 1;
-  }
+        const imgData = pageCanvas.toDataURL("image/png");
+        const imgHeightMm = (pageCanvas.height * pdfWidth) / canvas.width;
 
-  pdf.save("Itinerario.pdf");
+        if (pageIndex > 0) pdf.addPage();
+        pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, imgHeightMm);
 
-  // cierra el modal después de guardar
-  if (typeof onClose === "function") onClose();
-};
+        y += pageHeightPx;
+        pageIndex++;
+      }
 
+      pdf.save("Itinerario.pdf");
+    } finally {
+      // Restaurar iframes SIEMPRE
+      iframes.forEach((f, i) => (f.style.display = originalDisplays[i] || ""));
+      if (typeof onClose === "function") onClose();
+    }
+  };
 
   const calcularCostoTotal = () => {
     return Number(budget).toLocaleString("es-MX", {
@@ -110,7 +129,7 @@ function FinalItineraryModal({ onClose, tripData }) {
               destinations.map((destino, index) => {
                 const hotel = destino.hotels?.[0];
                 const actividad = destino.activities?.[0];
-                const vuelo = destino.flight || {}; // 🔹 Información de vuelo
+                const vuelo = destino.flight || {};
 
                 return (
                   <div key={index} className="day-card">
@@ -128,7 +147,9 @@ function FinalItineraryModal({ onClose, tripData }) {
                       <br />
                       <strong>Precio por noche:</strong>{" "}
                       {hotel?.price
-                        ? `${hotel.price.toFixed(2)} ${hotel.currency || "MXN"}`
+                        ? `${hotel.price.toFixed(2)} ${
+                            hotel.currency || "MXN"
+                          }`
                         : "N/A"}
                       <br />
                       <strong>Actividad recomendada:</strong>{" "}
@@ -141,7 +162,7 @@ function FinalItineraryModal({ onClose, tripData }) {
                         </>
                       )}
 
-                      {/* 🔹 Bloque de vuelos */}
+                      {/* Vuelos */}
                       {vuelo.origen || vuelo.destino ? (
                         <div className="flight-info">
                           <div className="flight-title">
