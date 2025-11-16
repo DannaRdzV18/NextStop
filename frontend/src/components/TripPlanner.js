@@ -52,12 +52,15 @@ function TripPlanner() {
       const prevDestinations = prev.destinations || [];
       const newDestinations = [...prevDestinations, nuevoDestino];
 
-      const usedDays = newDestinations.reduce((s, d) => s + Number(d.dias ?? d.days ?? 0), 0);
+      const usedDays = newDestinations.reduce(
+        (s, d) => s + Number(d.dias ?? d.days ?? 0),
+        0
+      );
+
       const totalDays = calculateDurationFromPrev(prev);
 
       if (totalDays > 0 && usedDays >= totalDays) {
-        // Cierra modal de destino y abre modal final
-        setTimeout(() => setShowItineraryModal(true), 100);
+        setTimeout(() => setShowItineraryModal(true), 150);
       }
 
       return { ...prev, destinations: newDestinations };
@@ -74,7 +77,7 @@ function TripPlanner() {
     return 0;
   };
 
-  // 🔹 Ya no requiere sesión
+  // 🔹 Leer usuario desde localStorage
   const [usuario, setUsuario] = useState(() => {
     const storedUser = localStorage.getItem('usuario');
     return storedUser ? JSON.parse(storedUser) : null;
@@ -89,13 +92,17 @@ function TripPlanner() {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
-  // 🔹 Limpia destinos si cambian datos principales
+  // ⚠️ CORRECCIÓN IMPORTANTE:
+  // Solo reinicia destinos si cambian las FECHAS (no origen ni presupuesto)
   useEffect(() => {
-    if ((tripData.destinations || []).length > 0) {
-      setTripData((prev) => ({ ...prev, destinations: [] }));
-      console.log('TripPlanner: campos principales cambiaron -> destinos reiniciados');
-    }
-  }, [tripData.origin, tripData.departureDate, tripData.returnDate, tripData.budget]);
+    setTripData((prev) => {
+      if (prev.departureDate && prev.returnDate && prev.destinations.length > 0) {
+        console.log('Fechas cambiaron -> destinos reiniciados');
+        return { ...prev, destinations: [] };
+      }
+      return prev;
+    });
+  }, [tripData.departureDate, tripData.returnDate]);
 
   const handleInputChange = (field, value) => {
     setTripData((prev) => ({ ...prev, [field]: value }));
@@ -108,7 +115,9 @@ function TripPlanner() {
     }
     try {
       setIsLoadingOrigin(true);
-      const response = await fetch(`https://nextstop-app-u9cvd.ondigitalocean.app/api/external/locations/?query=${query}`);
+      const response = await fetch(
+        `https://nextstop-app-u9cvd.ondigitalocean.app/api/external/locations/?query=${query}`
+      );
       const data = await response.json();
       setOriginSuggestions(data);
     } catch (error) {
@@ -131,7 +140,13 @@ function TripPlanner() {
   const totalPeople = tripData.adults + tripData.seniors + tripData.children;
 
   const areFieldsComplete = () => {
-    return tripData.origin && tripData.departureDate && tripData.returnDate && totalPeople > 0 && tripData.budget;
+    return (
+      tripData.origin &&
+      tripData.departureDate &&
+      tripData.returnDate &&
+      totalPeople > 0 &&
+      tripData.budget
+    );
   };
 
   const handleOpenDestinationModal = () => {
@@ -152,44 +167,44 @@ function TripPlanner() {
       <p className="trip-subtitle">Comencemos con los datos básicos de tu viaje</p>
 
       {/* Origen */}
-        <div className="form-group">
-          <label>
-            <IoLocationSharp className="icon" />
-            ¿Desde dónde inicias tu viaje?
-          </label>
-          <div className="autocomplete-wrapper">
-            <input
-              type="text"
-              placeholder="Escribe tu ciudad de origen..."
-              value={originDisplay} // 👈 mostramos el nombre, no el código
-              onChange={(e) => {
-                const value = e.target.value;
-                setOriginDisplay(value); // actualiza lo visible
-                handleInputChange('origin', ''); // limpia el código
-                fetchCitySuggestions(value); // busca sugerencias
-              }}
-              className="input-field"
-            />
-            {originSuggestions.length > 0 && (
-              <ul className="suggestions-list">
-                {originSuggestions.map((sug, index) => (
-                  <li
-                    key={index}
-                    onClick={() => {
-                      handleInputChange('origin', sug.codigo); // 👈 guarda el código real
-                      setOriginDisplay(sug.nombre || sug.codigo); // 👈 muestra el nombre
-                      setOriginSuggestions([]); // limpia lista
-                    }}
-                    className="suggestion-item"
-                  >
-                    {sug.nombre} ({sug.codigo})
-                  </li>
-                ))}
-              </ul>
-            )}
-            {isLoadingOrigin && <div className="loading-text">Buscando...</div>}
-          </div>
+      <div className="form-group">
+        <label>
+          <IoLocationSharp className="icon" />
+          ¿Desde dónde inicias tu viaje?
+        </label>
+        <div className="autocomplete-wrapper">
+          <input
+            type="text"
+            placeholder="Escribe tu ciudad de origen..."
+            value={originDisplay}
+            onChange={(e) => {
+              const value = e.target.value;
+              setOriginDisplay(value);
+              handleInputChange('origin', '');
+              fetchCitySuggestions(value);
+            }}
+            className="input-field"
+          />
+          {originSuggestions.length > 0 && (
+            <ul className="suggestions-list">
+              {originSuggestions.map((sug, index) => (
+                <li
+                  key={index}
+                  onClick={() => {
+                    handleInputChange('origin', sug.codigo);
+                    setOriginDisplay(sug.nombre || sug.codigo);
+                    setOriginSuggestions([]);
+                  }}
+                  className="suggestion-item"
+                >
+                  {sug.nombre} ({sug.codigo})
+                </li>
+              ))}
+            </ul>
+          )}
+          {isLoadingOrigin && <div className="loading-text">Buscando...</div>}
         </div>
+      </div>
 
       {/* Fechas */}
       <div className="form-row spaced">
@@ -230,14 +245,17 @@ function TripPlanner() {
         <strong>Duración del viaje:</strong> {calculateDuration()} días
       </div>
 
-      {/* Personas y presupuesto */}
+      {/* Personas / presupuesto */}
       <div className="form-row spaced">
         <div className="form-group">
           <label>
             <IoPeople className="icon" />
             ¿Cuántas personas van?
           </label>
-          <div className="person-selector" onClick={() => setShowPersonModal(true)}>
+          <div
+            className="person-selector"
+            onClick={() => setShowPersonModal(true)}
+          >
             {totalPeople} {totalPeople === 1 ? 'persona' : 'personas'}
           </div>
         </div>
@@ -258,110 +276,35 @@ function TripPlanner() {
 
       {/* Botón agregar destinos */}
       <div className="btn-container">
-        <button className="add-destination-btn" onClick={handleOpenDestinationModal}>
+        <button
+          className="add-destination-btn"
+          onClick={handleOpenDestinationModal}
+        >
           Agregar destinos →
         </button>
       </div>
 
-      {/* Modal destinos */}
+      {/* Modal de destinos */}
       {showDestinationModal && (
         <DestinationModal
           onClose={() => setShowDestinationModal(false)}
           addDestination={addDestination}
           tripData={tripData}
           totalDays={calculateDuration()}
-          currentDestinations={tripData.destinations || []}
+          currentDestinations={tripData.destinations}
         />
       )}
 
-      {/* Modal final de itinerario */}
+      {/* Modal final */}
       {showItineraryModal && (
         <FinalItineraryModal
+          tripData={tripData}
           onClose={() => {
             setShowItineraryModal(false);
-            resetTripData(); // 🔹 Reinicia al cerrar
+            resetTripData();
+            setOriginDisplay('');
           }}
-          tripData={tripData}
         />
-      )}
-
-      {/* Modal personas */}
-      {showPersonModal && (
-        <div className="modal-overlay" onClick={() => setShowPersonModal(false)}>
-          <div className="person-modal" onClick={(e) => e.stopPropagation()}>
-            <button className="close-modal-btn" onClick={() => setShowPersonModal(false)}>
-              ✕
-            </button>
-            <h3>Personas</h3>
-            <p className="modal-subtitle">¿Cuántos van?</p>
-
-            {/* Adultos */}
-            <div className="person-row">
-              <div className="person-info">
-                <strong>Adultos (de 18 a 64 años)</strong>
-              </div>
-              <div className="person-controls">
-                <button
-                  onClick={() => handleInputChange('adults', Math.max(1, tripData.adults - 1))}
-                  className="control-btn"
-                >
-                  −
-                </button>
-                <span className="person-count">{tripData.adults}</span>
-                <button
-                  onClick={() => handleInputChange('adults', tripData.adults + 1)}
-                  className="control-btn"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-
-            {/* Adultos mayores */}
-            <div className="person-row">
-              <div className="person-info">
-                <strong>Adultos mayores (65 años en adelante)</strong>
-              </div>
-              <div className="person-controls">
-                <button
-                  onClick={() => handleInputChange('seniors', Math.max(0, tripData.seniors - 1))}
-                  className="control-btn"
-                >
-                  −
-                </button>
-                <span className="person-count">{tripData.seniors}</span>
-                <button
-                  onClick={() => handleInputChange('seniors', tripData.seniors + 1)}
-                  className="control-btn"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-
-            {/* Niños */}
-            <div className="person-row">
-              <div className="person-info">
-                <strong>Niños (0 a 17 años)</strong>
-              </div>
-              <div className="person-controls">
-                <button
-                  onClick={() => handleInputChange('children', Math.max(0, tripData.children - 1))}
-                  className="control-btn"
-                >
-                  −
-                </button>
-                <span className="person-count">{tripData.children}</span>
-                <button
-                  onClick={() => handleInputChange('children', tripData.children + 1)}
-                  className="control-btn"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
       )}
     </div>
   );
