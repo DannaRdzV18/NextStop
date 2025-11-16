@@ -15,6 +15,8 @@ function FinalItineraryModal({ onClose, tripData }) {
   const { destinations = [], budget = 0, origin = "", userName = "Usuario" } =
     tripData;
 
+  const GOOGLE_KEY = "AQUI_VA_TU_API_KEY_REAL";
+
   // ============================================================
   //          FUNCIÓN CORREGIDA PARA GENERAR EL PDF
   // ============================================================
@@ -22,7 +24,6 @@ function FinalItineraryModal({ onClose, tripData }) {
     const input = document.getElementById("final-itinerary");
     if (!input) return;
 
-    // Ocultar iframes temporalmente (Google Maps causa errores CORS)
     const iframes = Array.from(input.querySelectorAll("iframe"));
     const originalDisplays = iframes.map((f) => f.style.display);
 
@@ -87,18 +88,16 @@ function FinalItineraryModal({ onClose, tripData }) {
 
       pdf.save("Itinerario.pdf");
     } finally {
-      // Restaurar iframes SIEMPRE
       iframes.forEach((f, i) => (f.style.display = originalDisplays[i] || ""));
       if (typeof onClose === "function") onClose();
     }
   };
 
-  const calcularCostoTotal = () => {
-    return Number(budget).toLocaleString("es-MX", {
+  const calcularCostoTotal = () =>
+    Number(budget).toLocaleString("es-MX", {
       style: "currency",
       currency: "MXN",
     });
-  };
 
   return (
     <div className="final-itinerary-overlay" onClick={onClose}>
@@ -147,9 +146,7 @@ function FinalItineraryModal({ onClose, tripData }) {
                       <br />
                       <strong>Precio por noche:</strong>{" "}
                       {hotel?.price
-                        ? `${hotel.price.toFixed(2)} ${
-                            hotel.currency || "MXN"
-                          }`
+                        ? `${hotel.price.toFixed(2)} ${hotel.currency || "MXN"}`
                         : "N/A"}
                       <br />
                       <strong>Actividad recomendada:</strong>{" "}
@@ -162,7 +159,6 @@ function FinalItineraryModal({ onClose, tripData }) {
                         </>
                       )}
 
-                      {/* Vuelos */}
                       {vuelo.origen || vuelo.destino ? (
                         <div className="flight-info">
                           <div className="flight-title">
@@ -171,13 +167,11 @@ function FinalItineraryModal({ onClose, tripData }) {
                           </div>
                           <p>
                             <FaPlaneDeparture className="flight-icon" />{" "}
-                            <strong>Salida:</strong>{" "}
-                            {vuelo.origen || "No especificado"}{" "}
+                            <strong>Salida:</strong> {vuelo.origen || "N/A"}{" "}
                             {vuelo.horaSalida && `(${vuelo.horaSalida})`}
                             <br />
                             <FaPlaneArrival className="flight-icon" />{" "}
-                            <strong>Llegada:</strong>{" "}
-                            {vuelo.destino || "No especificado"}{" "}
+                            <strong>Llegada:</strong> {vuelo.destino || "N/A"}{" "}
                             {vuelo.horaLlegada && `(${vuelo.horaLlegada})`}
                             <br />
                             {vuelo.aerolinea && (
@@ -208,6 +202,7 @@ function FinalItineraryModal({ onClose, tripData }) {
             </p>
             <p className="total-cost">{calcularCostoTotal()}</p>
 
+            {/* MAPA (URL CORREGIDA SIN SALTOS DE LÍNEA) */}
             <div className="map-container">
               {destinations.length > 0 ? (
                 <iframe
@@ -215,17 +210,16 @@ function FinalItineraryModal({ onClose, tripData }) {
                   width="100%"
                   height="250"
                   style={{ borderRadius: "12px", border: 0 }}
-                  src={`https://www.google.com/maps/embed/v1/directions?key=AIzaSyB3EjCz-YourGoogleMapsAPIKeyHere
-                    &origin=${encodeURIComponent(origin || destinations[0]?.nombre)}
-                    &destination=${encodeURIComponent(
-                      destinations[destinations.length - 1]?.nombre
-                    )}
-                    &waypoints=${encodeURIComponent(
-                      destinations
-                        .slice(1, destinations.length - 1)
-                        .map((d) => d.nombre)
-                        .join("|")
-                    )}`}
+                  src={`https://www.google.com/maps/embed/v1/directions?key=${GOOGLE_KEY}&origin=${encodeURIComponent(
+                    origin || destinations[0]?.nombre
+                  )}&destination=${encodeURIComponent(
+                    destinations[destinations.length - 1]?.nombre
+                  )}&waypoints=${encodeURIComponent(
+                    destinations
+                      .slice(1, destinations.length - 1)
+                      .map((d) => d.nombre)
+                      .join("|")
+                  )}`}
                   allowFullScreen
                   loading="lazy"
                 ></iframe>
