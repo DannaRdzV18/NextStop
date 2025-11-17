@@ -344,6 +344,7 @@ function DestinationModal({ onClose, onFinalize, addDestination, tripData, total
                         <p>Precio: {a.price && a.price !== 'N/A'
                           ?`${convertToMXN(a.price, a.currency).toFixed(2)} MXN`
                           : 'N/A'}
+                         </p>
                       </div>
                     ))}
                     {/* ⭐ MENSAJE SI NO HAY ACTIVIDADES ⭐ */}
