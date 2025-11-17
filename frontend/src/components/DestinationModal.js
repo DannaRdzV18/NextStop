@@ -3,7 +3,7 @@ import './DestinationModal.css';
 import { IoLocationSharp, IoInformationCircleOutline } from 'react-icons/io5';
 import { convertToMXN } from '../utils/convertToMXN';
 
-function DestinationModal({ onClose, addDestination, tripData, totalDays = 0, currentDestinations = [] }) {
+function DestinationModal({ onClose, onFinalize, addDestination, tripData, totalDays = 0, currentDestinations = [] }) {
   const [destination, setDestination] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [days, setDays] = useState('');
@@ -40,32 +40,32 @@ function DestinationModal({ onClose, addDestination, tripData, totalDays = 0, cu
   const formattedCheckOut = salida.toISOString().split("T")[0];
 
   useEffect(() => {
-      const fetchSuggestions = async () => {
-        if (displayName.length < 2) {
-          setSuggestions([]);
-          return;
-        }
-        setLoadingSuggestions(true);
-        try {
-          const res = await fetch(`https://nextstop-app-u9cvd.ondigitalocean.app/api/external/locations/?query=${encodeURIComponent(displayName)}`);
-          if (!res.ok) throw new Error('Error');
-          const data = await res.json();
-          setSuggestions(data);
-        } catch (err) {
-          console.error(err);
-          setSuggestions([]);
-        } finally {
-          setLoadingSuggestions(false);
-        }
-      };
+    const fetchSuggestions = async () => {
+      if (displayName.length < 2) {
+        setSuggestions([]);
+        return;
+      }
+      setLoadingSuggestions(true);
+      try {
+        const res = await fetch(`https://nextstop-app-u9cvd.ondigitalocean.app/api/external/locations/?query=${encodeURIComponent(displayName)}`);
+        if (!res.ok) throw new Error('Error');
+        const data = await res.json();
+        setSuggestions(data);
+      } catch (err) {
+        console.error(err);
+        setSuggestions([]);
+      } finally {
+        setLoadingSuggestions(false);
+      }
+    };
 
-  const timer = setTimeout(fetchSuggestions, 300);
-  return () => clearTimeout(timer);
-}, [displayName]);
+    const timer = setTimeout(fetchSuggestions, 300);
+    return () => clearTimeout(timer);
+  }, [displayName]);
 
   const handleSelectSuggestion = (item) => {
-    setDestination(item.codigo||'');
-    setDisplayName(item.nombre|| item.codigo ||'');
+    setDestination(item.codigo || '');
+    setDisplayName(item.nombre || item.codigo || '');
     setSuggestions([]);
   };
 
@@ -142,46 +142,46 @@ function DestinationModal({ onClose, addDestination, tripData, totalDays = 0, cu
   };
 
   const handleSaveDestinationAndClose = async () => {
-      if (!destination || !days) {
-        setError('Completa destino y días antes de guardar.');
-        return;
-      }
+    if (!destination || !days) {
+      setError('Completa destino y días antes de guardar.');
+      return;
+    }
 
-// ⭐ CAMBIADO — ahora incluye seleccionados
-    const newDestination = { 
-      nombre: destination, 
-      dias: Number(days), 
-      flights, 
-      hotels, 
+    // ⭐ CAMBIADO — ahora incluye seleccionados
+    const newDestination = {
+      nombre: destination,
+      dias: Number(days),
+      flights,
+      hotels,
       activities,
       selectedFlight: selectedFlight !== null ? flights[selectedFlight] : null,
       selectedHotel: selectedHotel !== null ? hotels[selectedHotel] : null,
       selectedActivity: selectedActivity !== null ? activities[selectedActivity] : null
     };
-      // Aquí construyes el payload
-      const payload = {
-        id_itinerario: tripData.itineraryId, // asegúrate de tener el id del itinerario
-        destino: newDestination
-      };
-
-      try {
-        const res = await fetch('https://nextstop-app-u9cvd.ondigitalocean.app/api/itinerarios/agregar-destino/', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-
-        if (!res.ok) throw new Error('Error al guardar destino');
-
-        // Si hay función para actualizar el front
-        if (addDestination) addDestination(newDestination);
-        onClose && onClose();
-
-      } catch (err) {
-        console.error(err);
-        setError('No se pudo guardar el destino. Intenta de nuevo.');
-      }
+    // Aquí construyes el payload
+    const payload = {
+      id_itinerario: tripData.itineraryId, // asegúrate de tener el id del itinerario
+      destino: newDestination
     };
+
+    try {
+      const res = await fetch('https://nextstop-app-u9cvd.ondigitalocean.app/api/itinerarios/agregar-destino/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) throw new Error('Error al guardar destino');
+
+      // Si hay función para actualizar el front
+      if (addDestination) addDestination(newDestination);
+      onClose && onClose();
+
+    } catch (err) {
+      console.error(err);
+      setError('No se pudo guardar el destino. Intenta de nuevo.');
+    }
+  };
 
   const handleSaveDestinationAndContinue = () => {
     if (!destination || !days) {
@@ -195,22 +195,22 @@ function DestinationModal({ onClose, addDestination, tripData, totalDays = 0, cu
       return;
     }
     // ⭐ CAMBIADO — incluye seleccionados
-    const newDestination = { 
-      nombre: destination, 
-      dias: Number(days), 
-      flights, 
-      hotels, 
+    const newDestination = {
+      nombre: destination,
+      dias: Number(days),
+      flights,
+      hotels,
       activities,
       selectedFlight: selectedFlight !== null ? flights[selectedFlight] : null,
       selectedHotel: selectedHotel !== null ? hotels[selectedHotel] : null,
       selectedActivity: selectedActivity !== null ? activities[selectedActivity] : null
     };
-     if (addDestination) addDestination(newDestination);
+    if (addDestination) addDestination(newDestination);
 
     setDestination('');
     setDays('');
     setFlights([]); setHotels([]); setActivities([]);
-      // ⭐ AÑADIDO — reset selección
+    // ⭐ AÑADIDO — reset selección
     setSelectedFlight(null);
     setSelectedHotel(null);
     setSelectedActivity(null);
@@ -284,63 +284,63 @@ function DestinationModal({ onClose, addDestination, tripData, totalDays = 0, cu
                 </a>
               </div>
             </div>
-            
+
           ) : (
 
             <div className="options-section">
               {loadingOptions ? <p>Cargando opciones...</p> : (
                 <>
-                   {/* ⭐⭐ VUELOS — ahora seleccionables */}
-            <div className="cards-section">
-              <h4>Vuelos disponibles</h4>
-              {flights.map((f, i) => {
-                const segment = f.itineraries?.[0]?.segments?.[0] || {};
-                return (
-                  <div
-                    key={i}
-                    className={`card ${selectedFlight === i ? "selected" : ""}`}
-                    onClick={() => setSelectedFlight(i)}
-                  >
-                    <p>Aerolínea: {segment.carrierCode}</p>
-                    <p>{segment.departure.iataCode} → {segment.arrival.iataCode}</p>
+                  {/* ⭐⭐ VUELOS — ahora seleccionables */}
+                  <div className="cards-section">
+                    <h4>Vuelos disponibles</h4>
+                    {flights.map((f, i) => {
+                      const segment = f.itineraries?.[0]?.segments?.[0] || {};
+                      return (
+                        <div
+                          key={i}
+                          className={`card ${selectedFlight === i ? "selected" : ""}`}
+                          onClick={() => setSelectedFlight(i)}
+                        >
+                          <p>Aerolínea: {segment.carrierCode}</p>
+                          <p>{segment.departure.iataCode} → {segment.arrival.iataCode}</p>
+                        </div>
+                      );
+                    })}
+                    {/* ⭐ MENSAJE SI NO HAY VUELOS ⭐ */}
+                    {noFlightsMessage && <p className="no-options">{noFlightsMessage}</p>}
                   </div>
-                );
-              })}
-              {/* ⭐ MENSAJE SI NO HAY VUELOS ⭐ */}
-  {noFlightsMessage && <p className="no-options">{noFlightsMessage}</p>}
-            </div>
                   {/* ⭐⭐ HOTELES — seleccionables */}
-            <div className="cards-section">
-              <h4>Hoteles</h4>
-              {hotels.map((h, i) => (
-                <div
-                  key={i}
-                  className={`card ${selectedHotel === i ? "selected" : ""}`}
-                  onClick={() => setSelectedHotel(i)}
-                >
-                  <p>{h.name}</p>
-                  <p>{h.rating}★</p>
-                </div>
-              ))}
-               {/* ⭐ MENSAJE SI NO HAY HOTELES ⭐ */}
-  {noHotelsMessage && <p className="no-options">{noHotelsMessage}</p>}
-            </div>
-                   {/* ⭐⭐ ACTIVIDADES — seleccionables */}
-            <div className="cards-section">
-              <h4>Actividades</h4>
-              {activities.map((a, i) => (
-                <div
-                  key={i}
-                  className={`card ${selectedActivity === i ? "selected" : ""}`}
-                  onClick={() => setSelectedActivity(i)}
-                >
-                  <p>{a.name}</p>
-                  <p>Tipo: {a.type}</p>
-                </div>
-              ))}
-                {/* ⭐ MENSAJE SI NO HAY ACTIVIDADES ⭐ */}
-  {noActivitiesMessage && <p className="no-options">{noActivitiesMessage}</p>}
-            </div>
+                  <div className="cards-section">
+                    <h4>Hoteles</h4>
+                    {hotels.map((h, i) => (
+                      <div
+                        key={i}
+                        className={`card ${selectedHotel === i ? "selected" : ""}`}
+                        onClick={() => setSelectedHotel(i)}
+                      >
+                        <p>{h.name}</p>
+                        <p>{h.rating}★</p>
+                      </div>
+                    ))}
+                    {/* ⭐ MENSAJE SI NO HAY HOTELES ⭐ */}
+                    {noHotelsMessage && <p className="no-options">{noHotelsMessage}</p>}
+                  </div>
+                  {/* ⭐⭐ ACTIVIDADES — seleccionables */}
+                  <div className="cards-section">
+                    <h4>Actividades</h4>
+                    {activities.map((a, i) => (
+                      <div
+                        key={i}
+                        className={`card ${selectedActivity === i ? "selected" : ""}`}
+                        onClick={() => setSelectedActivity(i)}
+                      >
+                        <p>{a.name}</p>
+                        <p>Tipo: {a.type}</p>
+                      </div>
+                    ))}
+                    {/* ⭐ MENSAJE SI NO HAY ACTIVIDADES ⭐ */}
+                    {noActivitiesMessage && <p className="no-options">{noActivitiesMessage}</p>}
+                  </div>
                 </>
               )}
             </div>
@@ -356,7 +356,10 @@ function DestinationModal({ onClose, addDestination, tripData, totalDays = 0, cu
 
             {/* 🔹 Mostrar solo 2 botones cuando se cumplan los días */}
             {remaining - Number(days) <= 0 ? (
-              <button className="destination-btn btn-add" onClick={() => { handleSaveDestinationAndClose(); onClose && onClose(); }}>
+              <button className="destination-btn btn-add" onClick={async () => {
+                await handleSaveDestinationAndClose();
+                onFinalize && onFinalize();
+              }}>
                 Finalizar itinerario
               </button>
             ) : (

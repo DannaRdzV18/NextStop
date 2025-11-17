@@ -152,44 +152,44 @@ function TripPlanner() {
       <p className="trip-subtitle">Comencemos con los datos básicos de tu viaje</p>
 
       {/* Origen */}
-        <div className="form-group">
-          <label>
-            <IoLocationSharp className="icon" />
-            ¿Desde dónde inicias tu viaje?
-          </label>
-          <div className="autocomplete-wrapper">
-            <input
-              type="text"
-              placeholder="Escribe tu ciudad de origen..."
-              value={originDisplay} // 👈 mostramos el nombre, no el código
-              onChange={(e) => {
-                const value = e.target.value;
-                setOriginDisplay(value); // actualiza lo visible
-                handleInputChange('origin', ''); // limpia el código
-                fetchCitySuggestions(value); // busca sugerencias
-              }}
-              className="input-field"
-            />
-            {originSuggestions.length > 0 && (
-              <ul className="suggestions-list">
-                {originSuggestions.map((sug, index) => (
-                  <li
-                    key={index}
-                    onClick={() => {
-                      handleInputChange('origin', sug.codigo); // 👈 guarda el código real
-                      setOriginDisplay(sug.nombre || sug.codigo); // 👈 muestra el nombre
-                      setOriginSuggestions([]); // limpia lista
-                    }}
-                    className="suggestion-item"
-                  >
-                    {sug.nombre} ({sug.codigo})
-                  </li>
-                ))}
-              </ul>
-            )}
-            {isLoadingOrigin && <div className="loading-text">Buscando...</div>}
-          </div>
+      <div className="form-group">
+        <label>
+          <IoLocationSharp className="icon" />
+          ¿Desde dónde inicias tu viaje?
+        </label>
+        <div className="autocomplete-wrapper">
+          <input
+            type="text"
+            placeholder="Escribe tu ciudad de origen..."
+            value={originDisplay} // 👈 mostramos el nombre, no el código
+            onChange={(e) => {
+              const value = e.target.value;
+              setOriginDisplay(value); // actualiza lo visible
+              handleInputChange('origin', ''); // limpia el código
+              fetchCitySuggestions(value); // busca sugerencias
+            }}
+            className="input-field"
+          />
+          {originSuggestions.length > 0 && (
+            <ul className="suggestions-list">
+              {originSuggestions.map((sug, index) => (
+                <li
+                  key={index}
+                  onClick={() => {
+                    handleInputChange('origin', sug.codigo); // 👈 guarda el código real
+                    setOriginDisplay(sug.nombre || sug.codigo); // 👈 muestra el nombre
+                    setOriginSuggestions([]); // limpia lista
+                  }}
+                  className="suggestion-item"
+                >
+                  {sug.nombre} ({sug.codigo})
+                </li>
+              ))}
+            </ul>
+          )}
+          {isLoadingOrigin && <div className="loading-text">Buscando...</div>}
         </div>
+      </div>
 
       {/* Fechas */}
       <div className="form-row spaced">
@@ -267,6 +267,10 @@ function TripPlanner() {
       {showDestinationModal && (
         <DestinationModal
           onClose={() => setShowDestinationModal(false)}
+          onFinalize={() => {
+            setShowDestinationModal(false);
+            setShowItineraryModal(true);
+          }}
           addDestination={addDestination}
           tripData={tripData}
           totalDays={calculateDuration()}
