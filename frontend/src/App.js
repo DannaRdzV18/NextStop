@@ -4,6 +4,7 @@ import Verificar from './components/Verificar';
 import Login from './components/Login';
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
+import Soporte from './pages/Soporte';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
 function App() {
@@ -16,6 +17,7 @@ function App() {
           <Route path="/registro" element={<Registro />} />
           <Route path="/verificar" element={<Verificar />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/soporte" element={<Soporte />} />
         </Routes>
       </div>
     </Router>
