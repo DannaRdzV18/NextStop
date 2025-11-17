@@ -32,9 +32,40 @@ function DestinationModal({ onClose, onFinalize, addDestination, tripData, total
     return d.toISOString().split("T")[0];
   };
 
-  const formattedDeparture = tripData?.departureDate ? formatDate(tripData.departureDate) : '';
+  // ✅ CORREGIDO: Calcular el origen correcto para el vuelo
+  const getFlightOrigin = () => {
+    // Si no hay destinos previos, usar el origen del tripData
+    if (!currentDestinations || currentDestinations.length === 0) {
+      return tripData?.origin || '';
+    }
+    
+    // Si hay destinos previos, usar el ÚLTIMO destino como origen
+    const lastDestination = currentDestinations[currentDestinations.length - 1];
+    return lastDestination.nombre || '';
+  };
+
+  // ✅ CORREGIDO: Calcular la fecha de salida correcta
+  const getFlightDepartureDate = () => {
+    if (!currentDestinations || currentDestinations.length === 0) {
+      return tripData?.departureDate ? formatDate(tripData.departureDate) : '';
+    }
+    
+    // Calcular fecha acumulando días de destinos anteriores
+    let accumulatedDays = 0;
+    currentDestinations.forEach(dest => {
+      accumulatedDays += Number(dest.dias || 0);
+    });
+    
+    const baseDate = new Date(tripData?.departureDate || new Date());
+    baseDate.setDate(baseDate.getDate() + accumulatedDays);
+    return formatDate(baseDate);
+  };
+
+  const flightOrigin = getFlightOrigin();
+  const flightDepartureDate = getFlightDepartureDate();
+
   const destinoDias = Number(days) || 0;
-  const salida = new Date(tripData?.departureDate || new Date());
+  const salida = new Date(flightDepartureDate || new Date());
   salida.setDate(salida.getDate() + destinoDias);
   const formattedCheckOut = salida.toISOString().split("T")[0];
 
@@ -70,7 +101,7 @@ function DestinationModal({ onClose, onFinalize, addDestination, tripData, total
 
   const fetchOptions = async () => {
     if (!destination || !days || !tripData) return;
-    const { origin, adults } = tripData;
+    const { adults } = tripData;
     const totalPeople = adults;
 
     setLoadingOptions(true);
@@ -78,9 +109,11 @@ function DestinationModal({ onClose, onFinalize, addDestination, tripData, total
     setNoFlightsMessage(''); setNoHotelsMessage(''); setNoActivitiesMessage('');
 
     try {
+      // ✅ CORREGIDO: Usar flightOrigin y flightDepartureDate en lugar del origen inicial
       const flightRes = await fetch(
-        `https://nextstop-app-u9cvd.ondigitalocean.app/api/external/vuelos/?origen=${encodeURIComponent(origin)}&destino=${encodeURIComponent(destination)}&fecha_salida=${formattedDeparture}`
+        `https://nextstop-app-u9cvd.ondigitalocean.app/api/external/vuelos/?origen=${encodeURIComponent(flightOrigin)}&destino=${encodeURIComponent(destination)}&fecha_salida=${flightDepartureDate}`
       );
+      
       if (flightRes.ok) {
         const flightData = await flightRes.json();
         if (!Array.isArray(flightData) || flightData.length === 0) {
@@ -92,8 +125,9 @@ function DestinationModal({ onClose, onFinalize, addDestination, tripData, total
       }
 
       const hotelRes = await fetch(
-        `https://nextstop-app-u9cvd.ondigitalocean.app/api/external/hoteles/?ciudad=${encodeURIComponent(destination)}&fecha_entrada=${formattedDeparture}&fecha_salida=${formattedCheckOut}&personas=${totalPeople}`
+        `https://nextstop-app-u9cvd.ondigitalocean.app/api/external/hoteles/?ciudad=${encodeURIComponent(destination)}&fecha_entrada=${flightDepartureDate}&fecha_salida=${formattedCheckOut}&personas=${totalPeople}`
       );
+      
       if (hotelRes.ok) {
         const hotelData = await hotelRes.json();
         if (!Array.isArray(hotelData) || hotelData.length === 0) {
@@ -105,8 +139,9 @@ function DestinationModal({ onClose, onFinalize, addDestination, tripData, total
       }
 
       const actRes = await fetch(
-        `https://nextstop-app-u9cvd.ondigitalocean.app/api/external/activities/?ciudad=${encodeURIComponent(destination)}&fecha_inicio=${formattedDeparture}`
+        `https://nextstop-app-u9cvd.ondigitalocean.app/api/external/activities/?ciudad=${encodeURIComponent(destination)}&fecha_inicio=${flightDepartureDate}`
       );
+      
       if (actRes.ok) {
         const actData = await actRes.json();
         if (!Array.isArray(actData) || actData.length === 0) {
@@ -167,7 +202,10 @@ function DestinationModal({ onClose, onFinalize, addDestination, tripData, total
         activities: activities || [],
         selectedFlight: selectedFlight !== null ? flights[selectedFlight] : null,
         selectedHotel: selectedHotel !== null ? hotels[selectedHotel] : null,
-        selectedActivity: selectedActivity !== null ? activities[selectedActivity] : null
+        selectedActivity: selectedActivity !== null ? activities[selectedActivity] : null,
+        // ✅ AGREGADO: Información de origen y fecha real del vuelo
+        flightOrigin: flightOrigin,
+        flightDepartureDate: flightDepartureDate
       };
 
       console.log('📦 Nuevo destino a guardar:', newDestination);
@@ -262,6 +300,12 @@ function DestinationModal({ onClose, onFinalize, addDestination, tripData, total
                 />
               </div>
 
+              {/* ✅ AGREGADO: Mostrar información de ruta actual */}
+              <div className="ruta-info">
+                <p><strong>Ruta actual:</strong> {flightOrigin} → {destination || '?'}</p>
+                <p><strong>Fecha de salida:</strong> {flightDepartureDate}</p>
+              </div>
+
               {error && <p className="error-text">{error}</p>}
 
               <div className="destination-buttons">
@@ -286,6 +330,12 @@ function DestinationModal({ onClose, onFinalize, addDestination, tripData, total
             <div className="options-section">
               {loadingOptions ? <p>Cargando opciones...</p> : (
                 <>
+                  {/* ✅ AGREGADO: Información de ruta en la sección de opciones */}
+                  <div className="ruta-header">
+                    <h4> Vuelos de {flightOrigin} a {destination}</h4>
+                    <p>Fecha de salida: {flightDepartureDate}</p>
+                  </div>
+
                   {/* VUELOS */}
                   <div className="cards-section">
                     <h4>Vuelos disponibles</h4>
