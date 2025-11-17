@@ -7,13 +7,13 @@ import {
   FaPlaneDeparture,
   FaPlaneArrival,
 } from "react-icons/fa";
+import { convertToMXN } from '../utils/convertToMXN';
 import "./FinalItineraryModal.css";
 
 function FinalItineraryModal({ onClose, tripData }) {
   if (!tripData) return null;
 
-  const { destinations = [], budget = 0, origin = "", userName = "Usuario" } =
-    tripData;
+  const { destinations = [], budget = 0, origin = "", userName = "Usuario" } = tripData;
 
   const handleDownloadPDF = async () => {
     const input = document.getElementById("final-itinerary");
@@ -44,6 +44,11 @@ function FinalItineraryModal({ onClose, tripData }) {
     if (typeof onClose === "function") onClose();
   };
 
+  // Función para manejar el cierre con la X
+  const handleClose = () => {
+    if (typeof onClose === "function") onClose();
+  };
+
   const calcularCostoTotal = () => {
     return Number(budget).toLocaleString("es-MX", {
       style: "currency",
@@ -54,17 +59,30 @@ function FinalItineraryModal({ onClose, tripData }) {
   // Función para formatear la duración del vuelo
   const formatDuration = (duration) => {
     if (!duration) return "N/A";
-    // Remover "PT" y formatear la duración
     return duration.replace('PT', '').replace('H', 'h ').replace('M', 'm');
   };
 
+  // Función para verificar si hay opciones disponibles
+  const hasOptions = (destino, type) => {
+    if (type === 'flight') return destino.flights && destino.flights.length > 0;
+    if (type === 'hotel') return destino.hotels && destino.hotels.length > 0;
+    if (type === 'activity') return destino.activities && destino.activities.length > 0;
+    return false;
+  };
+
   return (
-    <div className="final-itinerary-overlay" onClick={onClose}>
+    // ❌ ELIMINADO: onClick={onClose}
+    <div className="final-itinerary-overlay">
       <div
         className="final-itinerary-modal"
         id="final-itinerary"
-        onClick={(e) => e.stopPropagation()}
+        // ❌ ELIMINADO: onClick={(e) => e.stopPropagation()}
       >
+        {/* ✅ AGREGADO: Botón de cierre X */}
+        <button className="close-modal-btn" onClick={handleClose}>
+          ×
+        </button>
+
         <h2 className="itinerary-title">Tu Itinerario</h2>
 
         <div className="itinerary-content">
@@ -85,7 +103,6 @@ function FinalItineraryModal({ onClose, tripData }) {
               <p>No se agregaron destinos.</p>
             ) : (
               destinations.map((destino, index) => {
-                // ⭐ CORREGIDO - Usar selectedFlight, selectedHotel, selectedActivity
                 const selectedFlight = destino.selectedFlight;
                 const selectedHotel = destino.selectedHotel;
                 const selectedActivity = destino.selectedActivity;
@@ -97,68 +114,94 @@ function FinalItineraryModal({ onClose, tripData }) {
                       <span className="city-names">{destino.nombre}</span>
                     </div>
 
-                    <p className="day-description">
-                      <strong>Días:</strong> {destino.dias || "N/A"} <br />
+                    <div className="day-description">
+                      <p><strong>Días:</strong> {destino.dias || "N/A"}</p>
                       
-                      {/* ⭐ HOTEL - usando selectedHotel */}
-                      <strong>Hotel:</strong>{" "}
-                      {selectedHotel?.name
-                        ? `${selectedHotel.name} (${selectedHotel.rating || "N/A"}★)`
-                        : "No seleccionado"}
-                      <br />
-                      <strong>Precio por noche:</strong>{" "}
-                      {selectedHotel?.price
-                        ? `${selectedHotel.price.toFixed(2)} ${selectedHotel.currency || "MXN"}`
-                        : "N/A"}
-                      <br />
+                      {/* HOTEL - CON CONVERSIÓN A MXN */}
+                      <p>
+                        <strong>Hotel:</strong>{" "}
+                        {selectedHotel?.name
+                          ? `${selectedHotel.name} (${selectedHotel.rating || "N/A"}★)`
+                          : hasOptions(destino, 'hotel') 
+                            ? "No seleccionado" 
+                            : "No disponible"}
+                      </p>
+                      <p>
+                        <strong>Precio por noche:</strong>{" "}
+                        {selectedHotel?.price
+                          ? `${convertToMXN(selectedHotel.price, selectedHotel.currency).toFixed(2)} MXN`
+                          : hasOptions(destino, 'hotel') 
+                            ? "Selecciona un hotel" 
+                            : "N/A"}
+                      </p>
                       
-                      {/* ⭐ ACTIVIDAD - usando selectedActivity */}
-                      <strong>Actividad:</strong>{" "}
-                      {selectedActivity?.name || "No seleccionada"}
-                      <br />
-
-                      {/* ⭐ VUELO - usando selectedFlight */}
-                      {selectedFlight ? (
-                        <div className="flight-info">
-                          <div className="flight-title">
-                            <FaPlaneDeparture /> &nbsp;
-                            <strong>Vuelo</strong>
-                          </div>
-                          
-                          {selectedFlight.itineraries?.[0]?.segments?.map((segment, segIndex) => (
-                            <div key={segIndex} className="flight-segment">
-                              <p>
-                                <strong>Aerolínea:</strong> {segment.carrierCode} {segment.number}
-                              </p>
-                              <p>
-                                <FaPlaneDeparture className="flight-icon" />{" "}
-                                <strong>Salida:</strong> {segment.departure?.iataCode} 
-                                {" "}({segment.departure?.at ? 
-                                  new Date(segment.departure.at).toLocaleDateString() + ", " + 
-                                  new Date(segment.departure.at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
-                                  : "N/A"})
-                              </p>
-                              <p>
-                                <FaPlaneArrival className="flight-icon" />{" "}
-                                <strong>Llegada:</strong> {segment.arrival?.iataCode}
-                                {" "}({segment.arrival?.at ? 
-                                  new Date(segment.arrival.at).toLocaleDateString() + ", " + 
-                                  new Date(segment.arrival.at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
-                                  : "N/A"})
-                              </p>
-                              <p>
-                                <strong>Duración:</strong> {formatDuration(selectedFlight.itineraries?.[0]?.duration)}
-                              </p>
-                              <p>
-                                <strong>Precio:</strong> {selectedFlight.price?.total || "N/A"} {selectedFlight.price?.currency || ""}
-                              </p>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <em>No se seleccionó vuelo para este destino.</em>
+                      {/* ACTIVIDAD - CON CONVERSIÓN A MXN */}
+                      <p>
+                        <strong>Actividad:</strong>{" "}
+                        {selectedActivity?.name || 
+                          (hasOptions(destino, 'activity') 
+                            ? "No seleccionada" 
+                            : "No disponible")}
+                      </p>
+                      {selectedActivity?.price && selectedActivity.price !== 'N/A' && (
+                        <p>
+                          <strong>Precio actividad:</strong>{" "}
+                          {convertToMXN(selectedActivity.price, selectedActivity.currency).toFixed(2)} MXN
+                        </p>
                       )}
-                    </p>
+
+                      {/* VUELO - CON CONVERSIÓN A MXN */}
+                      <div className="flight-section">
+                        {selectedFlight ? (
+                          <div className="flight-info">
+                            <div className="flight-title">
+                              <FaPlaneDeparture /> &nbsp;
+                              <strong>Vuelo Seleccionado</strong>
+                            </div>
+                            
+                            {selectedFlight.itineraries?.[0]?.segments?.map((segment, segIndex) => (
+                              <div key={segIndex} className="flight-segment">
+                                <p>
+                                  <strong>Aerolínea:</strong> {segment.carrierCode} {segment.number}
+                                </p>
+                                <p>
+                                  <FaPlaneDeparture className="flight-icon" />{" "}
+                                  <strong>Salida:</strong> {segment.departure?.iataCode} 
+                                  {" "}({segment.departure?.at ? 
+                                    new Date(segment.departure.at).toLocaleDateString() + ", " + 
+                                    new Date(segment.departure.at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+                                    : "N/A"})
+                                </p>
+                                <p>
+                                  <FaPlaneArrival className="flight-icon" />{" "}
+                                  <strong>Llegada:</strong> {segment.arrival?.iataCode}
+                                  {" "}({segment.arrival?.at ? 
+                                    new Date(segment.arrival.at).toLocaleDateString() + ", " + 
+                                    new Date(segment.arrival.at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+                                    : "N/A"})
+                                </p>
+                                <p>
+                                  <strong>Duración:</strong> {formatDuration(selectedFlight.itineraries?.[0]?.duration)}
+                                </p>
+                                <p>
+                                  <strong>Precio:</strong> {selectedFlight.price?.total ? 
+                                    `${convertToMXN(selectedFlight.price.total, selectedFlight.price.currency).toFixed(2)} MXN`
+                                    : "N/A"}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        ) : hasOptions(destino, 'flight') ? (
+                          <div className="flight-info no-selection">
+                            <em>Vuelos disponibles pero no seleccionados</em>
+                          </div>
+                        ) : (
+                          <div className="flight-info no-availability">
+                            <em>No hay vuelos disponibles para este destino</em>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 );
               })
@@ -179,7 +222,6 @@ function FinalItineraryModal({ onClose, tripData }) {
 
             <p className="total-cost">{calcularCostoTotal()}</p>
 
-            {/* SIN MAPA */}
             <div className="map-container">
               <p>Ruta del viaje no disponible (mapa desactivado).</p>
             </div>

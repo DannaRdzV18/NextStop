@@ -21,11 +21,10 @@ function DestinationModal({ onClose, onFinalize, addDestination, tripData, total
   const [noActivitiesMessage, setNoActivitiesMessage] = useState('');
   const [error, setError] = useState('');
 
-  // ⭐ AÑADIDO — Estados para selección
+  // Estados para selección
   const [selectedFlight, setSelectedFlight] = useState(null);
   const [selectedHotel, setSelectedHotel] = useState(null);
   const [selectedActivity, setSelectedActivity] = useState(null);
-
 
   const formatDate = (date) => {
     if (!date) return "";
@@ -73,7 +72,6 @@ function DestinationModal({ onClose, onFinalize, addDestination, tripData, total
     if (!destination || !days || !tripData) return;
     const { origin, adults } = tripData;
     const totalPeople = adults;
-    const budgetNumber = Number(tripData.budget || 0);
 
     setLoadingOptions(true);
     setFlights([]); setHotels([]); setActivities([]);
@@ -86,8 +84,11 @@ function DestinationModal({ onClose, onFinalize, addDestination, tripData, total
       if (flightRes.ok) {
         const flightData = await flightRes.json();
         if (!Array.isArray(flightData) || flightData.length === 0) {
-          setFlights([]); setNoFlightsMessage('No hay vuelos disponibles en estas fechas.');
-        } else setFlights(flightData.slice(0, 3));
+          setFlights([]); 
+          setNoFlightsMessage('No hay vuelos disponibles en estas fechas.');
+        } else {
+          setFlights(flightData.slice(0, 3));
+        }
       }
 
       const hotelRes = await fetch(
@@ -96,8 +97,11 @@ function DestinationModal({ onClose, onFinalize, addDestination, tripData, total
       if (hotelRes.ok) {
         const hotelData = await hotelRes.json();
         if (!Array.isArray(hotelData) || hotelData.length === 0) {
-          setHotels([]); setNoHotelsMessage('No hay hoteles disponibles en estas fechas.');
-        } else setHotels(hotelData.slice(0, 3));
+          setHotels([]); 
+          setNoHotelsMessage('No hay hoteles disponibles en estas fechas.');
+        } else {
+          setHotels(hotelData.slice(0, 3));
+        }
       }
 
       const actRes = await fetch(
@@ -106,8 +110,11 @@ function DestinationModal({ onClose, onFinalize, addDestination, tripData, total
       if (actRes.ok) {
         const actData = await actRes.json();
         if (!Array.isArray(actData) || actData.length === 0) {
-          setActivities([]); setNoActivitiesMessage('No se encontraron actividades.');
-        } else setActivities(actData.slice(0, 3));
+          setActivities([]); 
+          setNoActivitiesMessage('No se encontraron actividades.');
+        } else {
+          setActivities(actData.slice(0, 3));
+        }
       }
 
     } catch (err) {
@@ -141,86 +148,75 @@ function DestinationModal({ onClose, onFinalize, addDestination, tripData, total
     await fetchOptions();
   };
 
-  const handleSaveDestinationAndClose = async () => {
+  // ⭐⭐ FUNCIÓN SIMPLIFICADA PARA GUARDAR DESTINO
+  const handleSaveDestination = async (action = 'close') => {
+    console.log('🔄 Guardando destino...', { destination, days, action });
+    
     if (!destination || !days) {
       setError('Completa destino y días antes de guardar.');
       return;
     }
-
-    // ⭐ CAMBIADO — ahora incluye seleccionados
-    const newDestination = {
-      nombre: destination,
-      dias: Number(days),
-      flights,
-      hotels,
-      activities,
-      selectedFlight: selectedFlight !== null ? flights[selectedFlight] : null,
-      selectedHotel: selectedHotel !== null ? hotels[selectedHotel] : null,
-      selectedActivity: selectedActivity !== null ? activities[selectedActivity] : null
-    };
-    // Aquí construyes el payload
-    const payload = {
-      id_itinerario: tripData.itineraryId, // asegúrate de tener el id del itinerario
-      destino: newDestination
-    };
 
     try {
-      const res = await fetch('https://nextstop-app-u9cvd.ondigitalocean.app/api/itinerarios/agregar-destino/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
+      // ⭐⭐ SIEMPRE crear el destino, incluso sin selecciones
+      const newDestination = {
+        nombre: destination,
+        dias: Number(days),
+        flights: flights || [],
+        hotels: hotels || [],
+        activities: activities || [],
+        selectedFlight: selectedFlight !== null ? flights[selectedFlight] : null,
+        selectedHotel: selectedHotel !== null ? hotels[selectedHotel] : null,
+        selectedActivity: selectedActivity !== null ? activities[selectedActivity] : null
+      };
 
-      if (!res.ok) throw new Error('Error al guardar destino');
+      console.log('📦 Nuevo destino a guardar:', newDestination);
 
-      // Si hay función para actualizar el front
-      if (addDestination) addDestination(newDestination);
-      onClose && onClose();
+      // ⭐⭐ SIEMPRE llamar a addDestination para actualizar el estado del padre
+      if (addDestination) {
+        console.log('🔄 Llamando addDestination...');
+        addDestination(newDestination);
+      } else {
+        console.warn('⚠️ addDestination no está definido');
+      }
+
+      // ⭐⭐ Diferentes acciones después de guardar
+      if (action === 'close') {
+        console.log('🚪 Cerrando modal...');
+        onClose && onClose();
+      } else if (action === 'finalize') {
+        console.log('🎯 Finalizando itinerario...');
+        onClose && onClose();
+        onFinalize && onFinalize();
+      } else if (action === 'continue') {
+        console.log('🔄 Continuando con siguiente destino...');
+        // Limpiar TODO para el siguiente destino
+        setDestination('');
+        setDisplayName('');
+        setDays('');
+        setFlights([]);
+        setHotels([]);
+        setActivities([]);
+        setSelectedFlight(null);
+        setSelectedHotel(null);
+        setSelectedActivity(null);
+        setShowOptions(false);
+        setError('');
+        setNoFlightsMessage('');
+        setNoHotelsMessage('');
+        setNoActivitiesMessage('');
+      }
 
     } catch (err) {
-      console.error(err);
+      console.error('❌ Error al guardar destino:', err);
       setError('No se pudo guardar el destino. Intenta de nuevo.');
     }
-  };
-
-  const handleSaveDestinationAndContinue = () => {
-    if (!destination || !days) {
-      setError('Completa destino y días antes de guardar.');
-      return;
-    }
-    const usedDays = (currentDestinations || []).reduce((s, d) => s + Number(d.dias ?? d.days ?? 0), 0);
-    const remaining = totalDays - usedDays;
-    if (Number(days) > remaining) {
-      setError(`Solo te quedan ${remaining} días disponibles.`);
-      return;
-    }
-    // ⭐ CAMBIADO — incluye seleccionados
-    const newDestination = {
-      nombre: destination,
-      dias: Number(days),
-      flights,
-      hotels,
-      activities,
-      selectedFlight: selectedFlight !== null ? flights[selectedFlight] : null,
-      selectedHotel: selectedHotel !== null ? hotels[selectedHotel] : null,
-      selectedActivity: selectedActivity !== null ? activities[selectedActivity] : null
-    };
-    if (addDestination) addDestination(newDestination);
-
-    setDestination('');
-    setDays('');
-    setFlights([]); setHotels([]); setActivities([]);
-    // ⭐ AÑADIDO — reset selección
-    setSelectedFlight(null);
-    setSelectedHotel(null);
-    setSelectedActivity(null);
-
-    setShowOptions(false);
   };
 
   // 🔹 Cálculo para mostrar botones correctos
   const usedDays = (currentDestinations || []).reduce((s, d) => s + Number(d.dias ?? d.days ?? 0), 0);
   const remaining = totalDays - usedDays;
+  const isLastDestination = remaining - Number(days) <= 0;
 
   return (
     <div className="modal-overlay">
@@ -290,7 +286,7 @@ function DestinationModal({ onClose, onFinalize, addDestination, tripData, total
             <div className="options-section">
               {loadingOptions ? <p>Cargando opciones...</p> : (
                 <>
-                  {/* ⭐⭐ VUELOS — ahora seleccionables */}
+                  {/* VUELOS */}
                   <div className="cards-section">
                     <h4>Vuelos disponibles</h4>
                     {flights.map((f, i) => {
@@ -301,18 +297,19 @@ function DestinationModal({ onClose, onFinalize, addDestination, tripData, total
                           className={`card ${selectedFlight === i ? "selected" : ""}`}
                           onClick={() => setSelectedFlight(i)}
                         >
-                          <p>Aerolínea: {segment.carrierCode} | Vuelo: {segment.number}</p>
-                          <p>{segment.departure.iataCode} → {segment.arrival.iataCode}</p>
-                          <p>Salida: {new Date(segment.departure.at).toLocaleString()} | Llegada: {new Date(segment.arrival.at).toLocaleString()}</p>
-                          <p>Duración: {f.itineraries?.[0]?.duration}</p>
-                          <p>Precio: {f.price ? convertToMXN(f.price.total, f.price.currency).toFixed(2) + ' MXN' : 'N/A'}</p>
+                          <p><strong>Aerolínea:</strong> {segment.carrierCode} | <strong>Vuelo:</strong> {segment.number}</p>
+                          <p><strong>Ruta:</strong> {segment.departure?.iataCode} → {segment.arrival?.iataCode}</p>
+                          <p><strong>Salida:</strong> {segment.departure?.at ? new Date(segment.departure.at).toLocaleString() : 'N/A'}</p>
+                          <p><strong>Llegada:</strong> {segment.arrival?.at ? new Date(segment.arrival.at).toLocaleString() : 'N/A'}</p>
+                          <p><strong>Duración:</strong> {f.itineraries?.[0]?.duration || 'N/A'}</p>
+                          <p><strong>Precio:</strong> {f.price ? convertToMXN(f.price.total, f.price.currency).toFixed(2) + ' MXN' : 'N/A'}</p>
                         </div>
                       );
                     })}
-                    {/* ⭐ MENSAJE SI NO HAY VUELOS ⭐ */}
                     {noFlightsMessage && <p className="no-options">{noFlightsMessage}</p>}
                   </div>
-                  {/* ⭐⭐ HOTELES — seleccionables */}
+
+                  {/* HOTELES */}
                   <div className="cards-section">
                     <h4>Hoteles</h4>
                     {hotels.map((h, i) => (
@@ -321,16 +318,15 @@ function DestinationModal({ onClose, onFinalize, addDestination, tripData, total
                         className={`card ${selectedHotel === i ? "selected" : ""}`}
                         onClick={() => setSelectedHotel(i)}
                       >
-                        <p>{h.name} ({h.rating}★)</p>
-                        <p>Precio por noche: {convertToMXN(h.price, h.currency).toFixed(2)} MXN</p>
-                        <p>Ubicación: {h.city}</p>
-                        <p>Check-in: {h.checkIn || formattedDeparture} | Check-out: {h.checkOut || formattedCheckOut}</p>
+                        <p><strong>{h.name}</strong> ({h.rating}★)</p>
+                        <p><strong>Precio por noche:</strong> {convertToMXN(h.price, h.currency).toFixed(2)} MXN</p>
+                        <p><strong>Ubicación:</strong> {h.city}</p>
                       </div>
                     ))}
-                    {/* ⭐ MENSAJE SI NO HAY HOTELES ⭐ */}
                     {noHotelsMessage && <p className="no-options">{noHotelsMessage}</p>}
                   </div>
-                  {/* ⭐⭐ ACTIVIDADES — seleccionables */}
+
+                  {/* ACTIVIDADES */}
                   <div className="cards-section">
                     <h4>Actividades</h4>
                     {activities.map((a, i) => (
@@ -339,15 +335,14 @@ function DestinationModal({ onClose, onFinalize, addDestination, tripData, total
                         className={`card ${selectedActivity === i ? "selected" : ""}`}
                         onClick={() => setSelectedActivity(i)}
                       >
-                        <p>{a.name}</p>
-                        <p>Tipo: {a.type || 'N/A'}</p>
-                        <p>Precio: {a.price && a.price !== 'N/A'
+                        <p><strong>{a.name}</strong></p>
+                        <p><strong>Tipo:</strong> {a.type || 'N/A'}</p>
+                        <p><strong>Precio:</strong> {a.price && a.price !== 'N/A'
                           ? `${convertToMXN(a.price, a.currency).toFixed(2)} MXN`
                           : 'N/A'}
                         </p>
                       </div>
                     ))}
-                    {/* ⭐ MENSAJE SI NO HAY ACTIVIDADES ⭐ */}
                     {noActivitiesMessage && <p className="no-options">{noActivitiesMessage}</p>}
                   </div>
                 </>
@@ -356,30 +351,28 @@ function DestinationModal({ onClose, onFinalize, addDestination, tripData, total
           )}
         </div>
 
-        {/* ✅ BOTONES DE OPCIONES */}
+        {/* ✅ BOTONES SIMPLIFICADOS */}
         {showOptions && (
           <div className="destination-buttons">
             <button className="destination-btn btn-back" onClick={() => setShowOptions(false)}>
               Volver
             </button>
 
-            {/* 🔹 Mostrar solo 2 botones cuando se cumplan los días */}
-            {remaining - Number(days) <= 0 ? (
-              <button className="destination-btn btn-add" onClick={async () => {
-                await handleSaveDestinationAndClose();
-                onFinalize && onFinalize();
-              }}>
+            {/* 🔹 Solo mostrar "Agregar destino" o "Finalizar itinerario" */}
+            {isLastDestination ? (
+              <button 
+                className="destination-btn btn-add" 
+                onClick={() => handleSaveDestination('finalize')}
+              >
                 Finalizar itinerario
               </button>
             ) : (
-              <>
-                <button className="destination-btn btn-save" onClick={handleSaveDestinationAndClose}>
-                  Guardar destino
-                </button>
-                <button className="destination-btn btn-add" onClick={handleSaveDestinationAndContinue}>
-                  Agregar otro destino
-                </button>
-              </>
+              <button 
+                className="destination-btn btn-add" 
+                onClick={() => handleSaveDestination('continue')}
+              >
+                Agregar destino
+              </button>
             )}
           </div>
         )}

@@ -137,6 +137,7 @@
 }
 
 /* Sugerencias */
+/* Sugerencias - MISMO ANCHO DEL MODAL */
 .suggestions-list {
   list-style: none;
   margin: 5px 0 0 0;
@@ -147,18 +148,28 @@
   border-radius: 8px;
   background-color: #fff;
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  z-index: 10;
+  z-index: 1000;
   position: absolute;
-  width: calc(100% - 30px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 60px); /* ✅ MISMO ANCHO que el modal (100% - padding) */
+  top: 100%;
 }
 
 .suggestions-list li {
   padding: 10px 15px;
   cursor: pointer;
   transition: background-color 0.2s;
+  text-align: left;
 }
 .suggestions-list li:hover {
   background-color: #f0f3e8;
+}
+
+/* Contenedor relativo para el input con sugerencias */
+.form-group {
+  position: relative;
+  margin-bottom: 10px;
 }
 
 /* Scroll */
