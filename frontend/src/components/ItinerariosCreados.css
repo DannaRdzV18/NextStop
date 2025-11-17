@@ -1,0 +1,353 @@
+.itinerarios-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+.itinerarios-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.itinerarios-header h1 {
+  color: #5a7045;
+  font-size: 2.5em;
+  margin-bottom: 10px;
+}
+
+.itinerarios-header p {
+  color: #6b7a5b;
+  font-size: 1.1em;
+}
+
+.sin-itinerarios {
+  text-align: center;
+  padding: 60px 20px;
+  background-color: #f8f9fa;
+  border-radius: 12px;
+  border: 2px dashed #dee2e6;
+}
+
+.sin-itinerarios h3 {
+  color: #6c757d;
+  margin-bottom: 10px;
+}
+
+.itinerarios-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.itinerario-card {
+  background: white;
+  border-radius: 12px;
+  padding: 25px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.itinerario-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+/* Agregar estos estilos al archivo ItinerariosCreados.css */
+
+/* Estilos para los iconos */
+.icono-hotel,
+.icono-actividad,
+.icono-vuelo,
+.icono-ciudad {
+  margin-right: 8px;
+  color: #7A9B5E;
+}
+
+.hotel-info h4,
+.actividad-info h4,
+.vuelo-info h4 {
+  display: flex;
+  align-items: center;
+}
+
+.ciudad {
+  display: flex;
+  align-items: center;
+  background: #E8E5A8;
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-weight: 600;
+  color: #5a7045;
+}
+
+/* Resto del CSS permanece igual */
+
+.itinerario-info h3 {
+  color: #5a7045;
+  margin-bottom: 10px;
+  font-size: 1.3em;
+}
+
+.itinerario-info p {
+  margin: 5px 0;
+  color: #6b7a5b;
+}
+
+.itinerario-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.btn-ver {
+  background-color: #7A9B5E;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.3s;
+}
+
+.btn-ver:hover {
+  background-color: #6a8a4e;
+}
+
+.btn-eliminar {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.3s;
+}
+
+.btn-eliminar:hover {
+  background-color: #c82333;
+}
+
+/* Modal de detalles - CORREGIDO CON PADDING */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 20px; /* ✅ AGREGADO: Padding alrededor del modal */
+}
+
+.modal-detalles {
+  background: white;
+  border-radius: 12px;
+  padding: 25px;
+  max-width: 700px;
+  width: 90%;
+  max-height: 85vh;
+  overflow-y: auto;
+  position: relative;
+  box-sizing: border-box; /* ✅ AGREGADO: Para que el padding no afecte el ancho */
+}
+
+.close-btn {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 1.8em;
+  cursor: pointer;
+  color: #6c757d;
+  z-index: 10;
+}
+
+.close-btn:hover {
+  color: #5a7045;
+}
+
+.modal-detalles h2 {
+  color: #5a7045;
+  margin-bottom: 20px;
+  padding-right: 30px;
+  font-size: 1.5em;
+}
+
+/* Botones del modal */
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 20px;
+}
+
+.btn-descargar-pdf {
+  background-color: #7A9B5E;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.3s;
+}
+
+.btn-descargar-pdf:hover {
+  background-color: #6a8a4e;
+}
+
+.detalles-content {
+  padding-bottom: 10px; /* ✅ AGREGADO: Padding interno inferior */
+}
+
+.detalle-section {
+  margin-bottom: 20px;
+}
+
+.detalle-section h3 {
+  color: #7A9B5E;
+  margin-bottom: 12px;
+  border-bottom: 2px solid #E8E5A8;
+  padding-bottom: 5px;
+  font-size: 1.2em;
+}
+
+.detalle-section p {
+  margin: 8px 0;
+  line-height: 1.4;
+}
+
+/* Ruta de viaje */
+.ruta-viaje {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.ciudad {
+  background: #E8E5A8;
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-weight: 600;
+  color: #5a7045;
+}
+
+.flecha {
+  color: #7A9B5E;
+  font-weight: bold;
+}
+
+/* Información de hotel, actividad y vuelo */
+.destino-completo {
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+  border-left: 4px solid #7A9B5E;
+  margin-bottom: 15px; /* ✅ AGREGADO: Separación entre destinos */
+}
+
+.hotel-info, .actividad-info, .vuelo-info {
+  margin: 15px 0;
+  padding: 12px;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+}
+
+.hotel-info h4, .actividad-info h4, .vuelo-info h4 {
+  color: #5a7045;
+  margin-bottom: 8px;
+  font-size: 1.1em;
+}
+
+.segmento-vuelo {
+  padding: 10px;
+  background: #f8f9fa;
+  border-radius: 4px;
+  margin: 8px 0;
+  border-left: 3px solid #7A9B5E;
+}
+
+.segmento-vuelo p {
+  margin: 4px 0;
+  font-size: 0.9em;
+}
+
+/* Estilo para mensajes de "no seleccionado" */
+.no-seleccionado {
+  color: #6c757d;
+  font-style: italic;
+  margin: 5px 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .itinerario-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+
+  .itinerario-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .modal-overlay {
+    padding: 10px; /* ✅ Padding reducido en móviles */
+  }
+
+  .modal-detalles {
+    padding: 20px;
+    max-height: 90vh;
+  }
+  
+  .modal-detalles h2 {
+    font-size: 1.3em;
+  }
+
+  .ruta-viaje {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+  }
+
+  .flecha {
+    transform: rotate(90deg);
+    margin: 0 10px;
+  }
+
+  .modal-actions {
+    justify-content: center;
+  }
+
+  .btn-descargar-pdf {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .itinerarios-container {
+    padding: 20px 15px;
+  }
+
+  .itinerarios-header h1 {
+    font-size: 2em;
+  }
+
+  .hotel-info, .actividad-info, .vuelo-info {
+    padding: 8px;
+  }
+
+  .modal-overlay {
+    padding: 5px; /* ✅ Padding mínimo en móviles pequeños */
+  }
+}

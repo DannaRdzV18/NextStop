@@ -15,6 +15,29 @@ function FinalItineraryModal({ onClose, tripData }) {
 
   const { destinations = [], budget = 0, origin = "", userName = "Usuario" } = tripData;
 
+  // Función para guardar el itinerario en localStorage
+  const guardarItinerario = () => {
+    const usuario = JSON.parse(localStorage.getItem('usuario'));
+    const itinerario = {
+      id: Date.now(), // ID único basado en timestamp
+      fechaCreacion: new Date().toLocaleDateString('es-MX'),
+      nombre: `Itinerario ${new Date().toLocaleDateString('es-MX')}`,
+      datos: tripData,
+      usuario: usuario ? usuario.nombre : 'Invitado'
+    };
+
+    // Obtener itinerarios existentes o crear array vacío
+    const itinerariosExistentes = JSON.parse(localStorage.getItem('itinerarios')) || [];
+    
+    // Agregar nuevo itinerario
+    const nuevosItinerarios = [itinerario, ...itinerariosExistentes];
+    
+    // Guardar en localStorage
+    localStorage.setItem('itinerarios', JSON.stringify(nuevosItinerarios));
+    
+    console.log('Itinerario guardado:', itinerario);
+  };
+
   const handleDownloadPDF = async () => {
     const input = document.getElementById("final-itinerary");
     if (!input) return;
@@ -36,6 +59,10 @@ function FinalItineraryModal({ onClose, tripData }) {
 
       pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
       pdf.save("Itinerario.pdf");
+      
+      // ✅ GUARDAR ITINERARIO después de generar PDF
+      guardarItinerario();
+      
     } catch (err) {
       console.error("Error generando el PDF:", err);
       alert("Ocurrió un error al generar el PDF.");
@@ -44,7 +71,7 @@ function FinalItineraryModal({ onClose, tripData }) {
     if (typeof onClose === "function") onClose();
   };
 
-  // Función para manejar el cierre con la X
+  // ... (el resto de tus funciones se mantienen igual)
   const handleClose = () => {
     if (typeof onClose === "function") onClose();
   };
@@ -56,13 +83,11 @@ function FinalItineraryModal({ onClose, tripData }) {
     });
   };
 
-  // Función para formatear la duración del vuelo
   const formatDuration = (duration) => {
     if (!duration) return "N/A";
     return duration.replace('PT', '').replace('H', 'h ').replace('M', 'm');
   };
 
-  // Función para verificar si hay opciones disponibles
   const hasOptions = (destino, type) => {
     if (type === 'flight') return destino.flights && destino.flights.length > 0;
     if (type === 'hotel') return destino.hotels && destino.hotels.length > 0;
@@ -71,18 +96,9 @@ function FinalItineraryModal({ onClose, tripData }) {
   };
 
   return (
-    // ❌ ELIMINADO: onClick={onClose}
     <div className="final-itinerary-overlay">
-      <div
-        className="final-itinerary-modal"
-        id="final-itinerary"
-        // ❌ ELIMINADO: onClick={(e) => e.stopPropagation()}
-      >
-        {/* ✅ AGREGADO: Botón de cierre X */}
-        <button className="close-modal-btn" onClick={handleClose}>
-          ×
-        </button>
-
+      <div className="final-itinerary-modal" id="final-itinerary">
+        <button className="close-modal-btn" onClick={handleClose}>×</button>
         <h2 className="itinerary-title">Tu Itinerario</h2>
 
         <div className="itinerary-content">
