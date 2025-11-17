@@ -301,8 +301,11 @@ function DestinationModal({ onClose, onFinalize, addDestination, tripData, total
                           className={`card ${selectedFlight === i ? "selected" : ""}`}
                           onClick={() => setSelectedFlight(i)}
                         >
-                          <p>Aerolínea: {segment.carrierCode}</p>
+                          <p>Aerolínea: {segment.carrierCode} | Vuelo: {segment.number}</p>
                           <p>{segment.departure.iataCode} → {segment.arrival.iataCode}</p>
+                          <p>Salida: {new Date(segment.departure.at).toLocaleString()} | Llegada: {new Date(segment.arrival.at).toLocaleString()}</p>
+                          <p>Duración: {f.itineraries?.[0]?.duration}</p>
+                          <p>Precio: {f.price ? convertToMXN(f.price.total, f.price.currency).toFixed(2) + ' MXN' : 'N/A'}</p>
                         </div>
                       );
                     })}
@@ -318,8 +321,10 @@ function DestinationModal({ onClose, onFinalize, addDestination, tripData, total
                         className={`card ${selectedHotel === i ? "selected" : ""}`}
                         onClick={() => setSelectedHotel(i)}
                       >
-                        <p>{h.name}</p>
-                        <p>{h.rating}★</p>
+                        <p>{h.name} ({h.rating}★)</p>
+                        <p>Precio por noche: {convertToMXN(h.price, h.currency).toFixed(2)} MXN</p>
+                        <p>Ubicación: {h.city}</p>
+                        <p>Check-in: {h.checkIn || formattedDeparture} | Check-out: {h.checkOut || formattedCheckOut}</p>
                       </div>
                     ))}
                     {/* ⭐ MENSAJE SI NO HAY HOTELES ⭐ */}
@@ -335,7 +340,10 @@ function DestinationModal({ onClose, onFinalize, addDestination, tripData, total
                         onClick={() => setSelectedActivity(i)}
                       >
                         <p>{a.name}</p>
-                        <p>Tipo: {a.type}</p>
+                        <p>Tipo: {a.type || 'N/A'}</p>
+                        <p>Precio: {a.price && a.price !== 'N/A'
+                          ?`${convertToMXN(a.price, a.currency).toFixed(2)} MXN`
+                          : 'N/A'}
                       </div>
                     ))}
                     {/* ⭐ MENSAJE SI NO HAY ACTIVIDADES ⭐ */}
