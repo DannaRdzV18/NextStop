@@ -223,7 +223,7 @@ function DestinationModal({ onClose, onFinalize, addDestination, tripData, total
   const remaining = totalDays - usedDays;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay">
       <div className="destination-modal" onClick={(e) => e.stopPropagation()}>
         <button className="close-modal-btn" onClick={onClose}>✕</button>
         <h3 className="modal-title">Agregar destino</h3>
