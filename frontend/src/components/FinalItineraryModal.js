@@ -15,9 +15,6 @@ function FinalItineraryModal({ onClose, tripData }) {
   const { destinations = [], budget = 0, origin = "", userName = "Usuario" } =
     tripData;
 
-  // ============================================================
-  //             FUNCIÓN PARA GENERAR PDF (SIN IFRAMES)
-  // ============================================================
   const handleDownloadPDF = async () => {
     const input = document.getElementById("final-itinerary");
     if (!input) return;
@@ -55,12 +52,9 @@ function FinalItineraryModal({ onClose, tripData }) {
   };
 
   return (
-    <div className="final-itinerary-overlay" onClick={onClose}>
-      <div
-        className="final-itinerary-modal"
-        id="final-itinerary"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <div className="final-itinerary-overlay">
+      <div className="final-itinerary-modal" id="final-itinerary">
+        <button className="close-modal-btn" onClick={onClose}>✕</button>
         <h2 className="itinerary-title">Tu Itinerario</h2>
 
         <div className="itinerary-content">
@@ -81,9 +75,10 @@ function FinalItineraryModal({ onClose, tripData }) {
               <p>No se agregaron destinos.</p>
             ) : (
               destinations.map((destino, index) => {
-                const hotel = destino.hotels?.[0];
-                const actividad = destino.activities?.[0];
-                const vuelo = destino.flight || {};
+                // ✅ Usar selectedHotel, selectedActivity, selectedFlight
+                const hotel = destino.selectedHotel || destino.hotels?.[0];
+                const actividad = destino.selectedActivity || destino.activities?.[0];
+                const vuelo = destino.selectedFlight || {};
 
                 return (
                   <div key={index} className="day-card">
@@ -94,52 +89,60 @@ function FinalItineraryModal({ onClose, tripData }) {
 
                     <p className="day-description">
                       <strong>Días:</strong> {destino.dias || "N/A"} <br />
+                      
                       <strong>Hotel:</strong>{" "}
                       {hotel?.name
                         ? `${hotel.name} (${hotel.rating || "N/A"}★)`
                         : "No seleccionado"}
                       <br />
+                      
                       <strong>Precio por noche:</strong>{" "}
                       {hotel?.price
-                        ? `${hotel.price.toFixed(2)} ${
-                            hotel.currency || "MXN"
-                          }`
+                        ? `${hotel.price.toFixed(2)} ${hotel.currency || "MXN"}`
                         : "N/A"}
                       <br />
-                      <strong>Actividad recomendada:</strong>{" "}
+                      
+                      <strong>Actividad:</strong>{" "}
                       {actividad?.name || "No seleccionada"}
                       <br />
 
-                      {/* Vuelos */}
-                      {vuelo.origen || vuelo.destino ? (
-                        <div className="flight-info">
-                          <div className="flight-title">
-                            <FaPlaneDeparture /> &nbsp;
-                            <strong>Vuelos</strong>
-                          </div>
+                      {/* ✅ Vuelos con nueva estructura */}
+                      {vuelo && vuelo.itineraries ? (
+                        (() => {
+                          const segment = vuelo.itineraries?.[0]?.segments?.[0] || {};
+                          return (
+                            <div className="flight-info">
+                              <div className="flight-title">
+                                <FaPlaneDeparture /> &nbsp;
+                                <strong>Vuelo</strong>
+                              </div>
 
-                          <p>
-                            <FaPlaneDeparture className="flight-icon" />{" "}
-                            <strong>Salida:</strong>{" "}
-                            {vuelo.origen || "No especificado"}{" "}
-                            {vuelo.horaSalida && `(${vuelo.horaSalida})`}
-                            <br />
+                              <p>
+                                <strong>Aerolínea:</strong> {segment.carrierCode || "N/A"} {segment.number || ""}
+                                <br />
+                                
+                                <FaPlaneDeparture className="flight-icon" />{" "}
+                                <strong>Salida:</strong>{" "}
+                                {segment.departure?.iataCode || "N/A"}{" "}
+                                ({segment.departure?.at ? new Date(segment.departure.at).toLocaleString('es-MX') : "N/A"})
+                                <br />
 
-                            <FaPlaneArrival className="flight-icon" />{" "}
-                            <strong>Llegada:</strong>{" "}
-                            {vuelo.destino || "No especificado"}{" "}
-                            {vuelo.horaLlegada && `(${vuelo.horaLlegada})`}
-                            <br />
+                                <FaPlaneArrival className="flight-icon" />{" "}
+                                <strong>Llegada:</strong>{" "}
+                                {segment.arrival?.iataCode || "N/A"}{" "}
+                                ({segment.arrival?.at ? new Date(segment.arrival.at).toLocaleString('es-MX') : "N/A"})
+                                <br />
 
-                            {vuelo.aerolinea && (
-                              <>
-                                <strong>Aerolínea:</strong> {vuelo.aerolinea}
-                              </>
-                            )}
-                          </p>
-                        </div>
+                                <strong>Duración:</strong> {vuelo.itineraries?.[0]?.duration || "N/A"}
+                                <br />
+
+                                <strong>Precio:</strong> {vuelo.price?.total || "N/A"} {vuelo.price?.currency || "USD"}
+                              </p>
+                            </div>
+                          );
+                        })()
                       ) : (
-                        <em>No se registraron vuelos para este destino.</em>
+                        <em>No se seleccionó vuelo para este destino.</em>
                       )}
                     </p>
                   </div>
@@ -162,7 +165,6 @@ function FinalItineraryModal({ onClose, tripData }) {
 
             <p className="total-cost">{calcularCostoTotal()}</p>
 
-            {/* SIN MAPA */}
             <div className="map-container">
               <p>Ruta del viaje no disponible (mapa desactivado).</p>
             </div>

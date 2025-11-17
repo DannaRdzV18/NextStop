@@ -161,12 +161,12 @@ function TripPlanner() {
           <input
             type="text"
             placeholder="Escribe tu ciudad de origen..."
-            value={originDisplay} // 👈 mostramos el nombre, no el código
+            value={originDisplay}
             onChange={(e) => {
               const value = e.target.value;
-              setOriginDisplay(value); // actualiza lo visible
-              handleInputChange('origin', ''); // limpia el código
-              fetchCitySuggestions(value); // busca sugerencias
+              setOriginDisplay(value);
+              handleInputChange('origin', '');
+              fetchCitySuggestions(value);
             }}
             className="input-field"
           />
@@ -176,9 +176,9 @@ function TripPlanner() {
                 <li
                   key={index}
                   onClick={() => {
-                    handleInputChange('origin', sug.codigo); // 👈 guarda el código real
-                    setOriginDisplay(sug.nombre || sug.codigo); // 👈 muestra el nombre
-                    setOriginSuggestions([]); // limpia lista
+                    handleInputChange('origin', sug.codigo);
+                    setOriginDisplay(sug.nombre || sug.codigo);
+                    setOriginSuggestions([]);
                   }}
                   className="suggestion-item"
                 >
@@ -278,21 +278,24 @@ function TripPlanner() {
         />
       )}
 
-      {/* Modal final de itinerario */}
+      {/* ✅ Modal final de itinerario CON NOMBRE DE USUARIO */}
       {showItineraryModal && (
         <FinalItineraryModal
           onClose={() => {
             setShowItineraryModal(false);
-            resetTripData(); // 🔹 Reinicia al cerrar
+            resetTripData();
           }}
-          tripData={tripData}
+          tripData={{
+            ...tripData,
+            userName: usuario?.nombre || "Usuario"
+          }}
         />
       )}
 
       {/* Modal personas */}
       {showPersonModal && (
-        <div className="modal-overlay" onClick={() => setShowPersonModal(false)}>
-          <div className="person-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-overlay">
+          <div className="person-modal">
             <button className="close-modal-btn" onClick={() => setShowPersonModal(false)}>
               ✕
             </button>
@@ -371,4 +374,4 @@ function TripPlanner() {
   );
 }
 
-export default TripPlanner;  
+export default TripPlanner;
