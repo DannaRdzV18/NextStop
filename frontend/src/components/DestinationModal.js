@@ -342,9 +342,9 @@ function DestinationModal({ onClose, onFinalize, addDestination, tripData, total
                         <p>{a.name}</p>
                         <p>Tipo: {a.type || 'N/A'}</p>
                         <p>Precio: {a.price && a.price !== 'N/A'
-                          ?`${convertToMXN(a.price, a.currency).toFixed(2)} MXN`
+                          ? `${convertToMXN(a.price, a.currency).toFixed(2)} MXN`
                           : 'N/A'}
-                         </p>
+                        </p>
                       </div>
                     ))}
                     {/* ⭐ MENSAJE SI NO HAY ACTIVIDADES ⭐ */}
