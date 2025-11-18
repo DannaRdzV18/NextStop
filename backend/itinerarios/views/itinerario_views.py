@@ -3,8 +3,6 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework_simplejwt.backends import TokenBackend
-from django.conf import settings
 from itinerarios.models import DetalleItinerario
 from usuarios.models import Usuario
 from ..serializers import ItinerarioSerializer
@@ -15,15 +13,27 @@ class CrearItinerarioView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        # --- DEBUG PRINTS ---
+        print("AUTH HEADER:", request.headers.get("Authorization"))
+        print("USER:", request.user)
+        print("AUTH PAYLOAD:", request.auth)
 
+        # --- Token payload ---
         payload = request.auth
-        usuario_id = payload.get("user_id")  # <--- CORREGIDO
+        if payload is None:
+            return Response({"detail": "Invalid or missing token"}, status=401)
 
+        usuario_id = payload.get("user_id")  # Aquí debe ir user_id
+        if not usuario_id:
+            return Response({"detail": "Invalid token payload"}, status=401)
+
+        # --- Usuario ---
         try:
             usuario = Usuario.objects.get(id=usuario_id)
         except Usuario.DoesNotExist:
             return Response({"detail": "User not found", "code": "user_not_found"}, status=404)
 
+        # --- Itinerario ---
         data = request.data
         detalles = data.pop("detalles", [])
 
@@ -33,6 +43,7 @@ class CrearItinerarioView(APIView):
 
         itinerario = serializer.save(usuario=usuario)
 
+        # --- Detalles ---
         for index, destino in enumerate(detalles):
             DetalleItinerario.objects.create(
                 itinerario=itinerario,
@@ -48,7 +59,8 @@ class CrearItinerarioView(APIView):
                 personas=destino.get("personas", 1),
             )
 
-        return Response(ItinerarioSerializer(itinerario).data,status=201)
+        return Response(ItinerarioSerializer(itinerario).data, status=201)
+
 
 class ListarItinerariosView(APIView):
     authentication_classes = [JWTAuthentication]
@@ -56,12 +68,8 @@ class ListarItinerariosView(APIView):
 
     def get(self, request):
 
-        # Igual que arriba: decodificar token
-        raw_token = request.auth
-        token_backend = TokenBackend(algorithm=settings.SIMPLE_JWT["ALGORITHM"])
-        payload = token_backend.decode(raw_token, verify=False)
-
-        usuario_id = payload.get("usuario_id")
+        payload = request.auth
+        usuario_id = payload.get("user_id")
 
         itinerarios = Itinerario.objects.filter(usuario_id=usuario_id)
 
