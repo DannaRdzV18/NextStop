@@ -44,7 +44,7 @@ function DestinationModal({ onClose, onFinalize, addDestination, tripData, total
     
     // Si hay destinos previos, usar el ÚLTIMO destino como origen
     const lastDestination = currentDestinations[currentDestinations.length - 1];
-    return lastDestination.nombre || '';
+    return lastDestination.nombre?.toUpperCase() || '';
   };
 
   // ✅ CORREGIDO: Calcular la fecha de salida correcta
@@ -106,10 +106,36 @@ function DestinationModal({ onClose, onFinalize, addDestination, tripData, total
   };
 
   const fetchOptions = async () => {
+    const usedDays = (currentDestinations || []).reduce(
+      (s, d) => s + Number(d.dias ?? d.days ?? 0),
+      0
+    );
+    const remainingDays = totalDays - usedDays;
+    const destinoDias = Number(days);
+    // 🚫 Validar que totalDays sea válido antes de calcular el presupuesto
+    if (!totalDays || totalDays <= 0) {
+      console.error("❌ totalDays no válido:", totalDays);
+      setError("Los días totales del viaje no son válidos.");
+      return;
+    }
+    // Presupuesto total del viaje
+    const budget = tripData?.budget || 0;
+    // Presupuesto por día y presupuesto del destino actual
+    const presupuestoPorDia = budget / totalDays;
+    const presupuestoParaEsteDestino = presupuestoPorDia * destinoDias;
+    // Límites para vuelos y hoteles
+    const limiteVuelos = presupuestoParaEsteDestino * 0.4;
+    const limiteHotelPorNoche = (presupuestoParaEsteDestino * 0.6) / destinoDias;
+    console.log("💰 PRESUPUESTO CALCULADO");
+    console.log("Total viaje:", budget);
+    console.log("Días totales:", totalDays);
+    console.log("Días destino:", destinoDias);
+    console.log("Pres. destino:", presupuestoParaEsteDestino);
+    console.log("Límite vuelos:", limiteVuelos);
+    console.log("Límite hotel por noche:", limiteHotelPorNoche);
     if (!destination || !days || !tripData) return;
     const { adults } = tripData;
     const totalPeople = adults;
-
     setLoadingOptions(true);
     setFlights([]); setHotels([]); setActivities([]);
     setNoFlightsMessage(''); setNoHotelsMessage(''); setNoActivitiesMessage('');
@@ -121,28 +147,35 @@ function DestinationModal({ onClose, onFinalize, addDestination, tripData, total
       );
       
       if (flightRes.ok) {
-        const flightData = await flightRes.json();
-        if (!Array.isArray(flightData) || flightData.length === 0) {
-          setFlights([]); 
-          setNoFlightsMessage('No hay vuelos disponibles en estas fechas.');
-        } else {
-          setFlights(flightData.slice(0, 3));
-        }
+      let flightData = await flightRes.json();
+      // 👉 Filtrar por presupuesto
+      flightData = flightData.filter(f => Number(f.price?.total || 999999) <= limiteVuelos);
+
+      if (!Array.isArray(flightData) || flightData.length === 0) {
+        setFlights([]);
+        setNoFlightsMessage('No hay vuelos dentro de tu presupuesto.');
+      } else {
+        setFlights(flightData.slice(0, 3));
       }
+    }
 
       const hotelRes = await fetch(
         `https://nextstop-app-u9cvd.ondigitalocean.app/api/external/hoteles/?ciudad=${encodeURIComponent(destination)}&fecha_entrada=${flightDepartureDate}&fecha_salida=${formattedCheckOut}&personas=${totalPeople}`
       );
       
       if (hotelRes.ok) {
-        const hotelData = await hotelRes.json();
-        if (!Array.isArray(hotelData) || hotelData.length === 0) {
-          setHotels([]); 
-          setNoHotelsMessage('No hay hoteles disponibles en estas fechas.');
-        } else {
-          setHotels(hotelData.slice(0, 3));
+          let hotelData = await hotelRes.json();
+
+          // 👉 Filtrar hoteles por precio por noche
+          hotelData = hotelData.filter(h => Number(h.price || 999999) <= limiteHotelPorNoche);
+
+          if (!Array.isArray(hotelData) || hotelData.length === 0) {
+            setHotels([]);
+            setNoHotelsMessage('No hay hoteles dentro de tu presupuesto.');
+          } else {
+            setHotels(hotelData.slice(0, 3));
+          }
         }
-      }
 
       const actRes = await fetch(
         `https://nextstop-app-u9cvd.ondigitalocean.app/api/external/activities/?ciudad=${encodeURIComponent(destination)}&fecha_inicio=${flightDepartureDate}`
