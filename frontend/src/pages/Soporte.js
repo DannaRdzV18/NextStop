@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import emailjs from '@emailjs/browser';
 import './Soporte.css';
 
 function Soporte() {
@@ -8,16 +9,53 @@ function Soporte() {
         asunto: '',
         mensaje: ''
     });
+    const [enviando, setEnviando] = useState(false);
     const [enviado, setEnviado] = useState(false);
+    const [error, setError] = useState('');
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        // Crear link mailto que abre el cliente de correo
-        const mailtoLink = `mailto:nextstop.itver@gmail.com?subject=${encodeURIComponent(formData.asunto)}&body=${encodeURIComponent(
-            `Nombre: ${formData.nombre}\nEmail: ${formData.email}\n\nMensaje:\n${formData.mensaje}`
-        )}`;
-        window.location.href = mailtoLink;
-        setEnviado(true);
+        setEnviando(true);
+        setError('');
+
+        // Variables de entorno (configuradas en .env.local y DigitalOcean)
+        const SERVICE_ID = process.env.REACT_APP_EMAILJS_SERVICE_ID;
+        const TEMPLATE_CONTACT = process.env.REACT_APP_EMAILJS_TEMPLATE_CONTACT;
+        const TEMPLATE_AUTOREPLY = process.env.REACT_APP_EMAILJS_TEMPLATE_AUTOREPLY;
+        const PUBLIC_KEY = process.env.REACT_APP_EMAILJS_PUBLIC_KEY;
+
+        const templateParams = {
+            nombre: formData.nombre,
+            email: formData.email,
+            asunto: formData.asunto,
+            mensaje: formData.mensaje
+        };
+
+        try {
+            // Enviar email a soporte
+            await emailjs.send(
+                SERVICE_ID,
+                TEMPLATE_CONTACT,
+                templateParams,
+                PUBLIC_KEY
+            );
+
+            // Enviar auto-reply al usuario
+            await emailjs.send(
+                SERVICE_ID,
+                TEMPLATE_AUTOREPLY,
+                templateParams,
+                PUBLIC_KEY
+            );
+
+            setEnviado(true);
+            setEnviando(false);
+            setFormData({ nombre: '', email: '', asunto: '', mensaje: '' });
+        } catch (error) {
+            console.error('Error al enviar:', error);
+            setError('Hubo un error al enviar el mensaje. Por favor, intenta de nuevo.');
+            setEnviando(false);
+        }
     };
 
     return (
@@ -37,6 +75,7 @@ function Soporte() {
                             value={formData.nombre}
                             onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
                             placeholder="Tu nombre"
+                            disabled={enviando}
                         />
                     </div>
 
@@ -48,6 +87,7 @@ function Soporte() {
                             value={formData.email}
                             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                             placeholder="tu@email.com"
+                            disabled={enviando}
                         />
                     </div>
 
@@ -57,6 +97,7 @@ function Soporte() {
                             value={formData.asunto}
                             onChange={(e) => setFormData({ ...formData, asunto: e.target.value })}
                             required
+                            disabled={enviando}
                         >
                             <option value="">Selecciona un tema</option>
                             <option value="Problema técnico">Problema técnico</option>
@@ -74,24 +115,28 @@ function Soporte() {
                             onChange={(e) => setFormData({ ...formData, mensaje: e.target.value })}
                             placeholder="Describe tu duda o problema..."
                             rows="6"
+                            disabled={enviando}
                         />
                     </div>
 
-                    <button type="submit" className="btn-enviar">
-                        Enviar mensaje
+                    {error && <p className="error-mensaje">{error}</p>}
+
+                    <button type="submit" className="btn-enviar" disabled={enviando}>
+                        {enviando ? 'Enviando...' : 'Enviar mensaje'}
                     </button>
                 </form>
             ) : (
                 <div className="mensaje-enviado">
-                    <h3>✓ Mensaje preparado</h3>
-                    <p>Tu cliente de correo se abrirá para enviar el mensaje.</p>
+                    <h3>✓ Mensaje enviado exitosamente</h3>
+                    <p>Hemos enviado una confirmación a tu correo electrónico.</p>
+                    <p>Te responderemos a la brevedad.</p>
                     <button onClick={() => setEnviado(false)}>Enviar otro mensaje</button>
                 </div>
             )}
 
             <div className="contacto-directo">
                 <h3>Contacto directo</h3>
-                <p>📧 <strong>Email:</strong> nextstop.itver@gmail.com</p>
+                <p>📧 <strong>Email:</strong> nextstopcompany@gmail.com</p>
                 <p>🕐 <strong>Horario:</strong> Lun - Vie, 10:00 AM - 6:00 PM</p>
             </div>
 
