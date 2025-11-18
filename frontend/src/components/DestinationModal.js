@@ -70,9 +70,10 @@ function DestinationModal({ onClose, onFinalize, addDestination, tripData, total
   ? new Date(flightDepartureDate).toLocaleDateString("es-MX"):"Sin fecha";
 
   const destinoDias = Number(days) || 0;
-  const salida = new Date(flightDepartureDate || new Date());
-  salida.setDate(salida.getDate() + destinoDias);
-  const formattedCheckOut = formatDate(salida);
+  const checkInDate = new Date(flightDepartureDate);
+  const checkOutDate = new Date(checkInDate);
+  checkOutDate.setDate(checkOutDate.getDate() + destinoDias);
+  const formattedCheckOut = formatDate(checkOutDate);
 
   useEffect(() => {
     const fetchSuggestions = async () => {
