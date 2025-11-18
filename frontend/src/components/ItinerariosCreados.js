@@ -13,10 +13,51 @@ function ItinerariosCreados() {
     cargarItinerarios();
   }, []);
 
-  const cargarItinerarios = () => {
-    const itinerariosGuardados = JSON.parse(localStorage.getItem('itinerarios')) || [];
-    setItinerarios(itinerariosGuardados);
-  };
+  const cargarItinerarios = async () => {
+  try {
+    const token = localStorage.getItem("access_token");
+
+    if (!token) {
+      console.warn("No hay token, usuario no autenticado");
+      return;
+    }
+
+    const response = await fetch(`https://nextstop-app-u9cvd.ondigitalocean.app/api/itinerarios/`, {
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization":`Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      console.error("Error al cargar itinerarios");
+      return;
+    }
+
+    const data = await response.json();
+    const lista = data.results || data;
+
+    // 🔥 AQUÍ HAGO LA MAGIA: reconstruyo "datos"
+    const itinerariosAdaptados = lista.map(it => {
+      const detalles = it.detalles || [];
+
+      return {
+        ...it,
+
+        // 👇 reconstruimos lo que el front necesita
+        datos: {
+          origin: detalles[0]?.origen || "No especificado",
+          destinations: detalles.map(d => d.info_completa || {}),
+          budget: detalles[0]?.info_completa?.budget || 0
+        }
+      };
+    });
+
+    setItinerarios(itinerariosAdaptados);
+  } catch (error) {
+    console.error("Error cargando itinerarios:", error);
+  }
+};
 
   const eliminarItinerario = (id) => {
     const nuevosItinerarios = itinerarios.filter(it => it.id !== id);

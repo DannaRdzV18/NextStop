@@ -6,6 +6,7 @@ from rest_framework.permissions import AllowAny
 from django.contrib.auth.hashers import check_password
 from ..models import Usuario
 from django.conf import settings
+from rest_framework_simplejwt.tokens import RefreshToken
 
 
 class LoginUsuarioView(APIView):
@@ -69,8 +70,14 @@ class LoginUsuarioView(APIView):
             return Response({'error': 'Contraseña incorrecta.'},
                             status=status.HTTP_401_UNAUTHORIZED)
 
+        refresh = RefreshToken.for_user(usuario)
+
         return Response({
             'mensaje': 'Login exitoso',
+            'token': {
+                'refresh': str(refresh),
+                'access': str(refresh.access_token),
+            },
             'usuario': {
                 'id': usuario.id,
                 'nombre': usuario.nombre,

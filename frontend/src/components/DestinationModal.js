@@ -210,7 +210,6 @@ function DestinationModal({ onClose, onFinalize, addDestination, tripData, total
         selectedFlight: selectedFlight !== null ? flights[selectedFlight] : null,
         selectedHotel: selectedHotel !== null ? hotels[selectedHotel] : null,
         selectedActivity: selectedActivity !== null ? activities[selectedActivity] : null,
-        // ✅ AGREGADO: Información de origen y fecha real del vuelo
         flightOrigin: flightOrigin,
         flightDepartureDate: flightDepartureDate
       };

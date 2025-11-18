@@ -4,7 +4,6 @@ from .views.vuelos_views import VuelosView
 from .views.hoteles_views import HotelesView
 from .views.generar_itinerario_views import GenerarItinerarioView
 from .views.activities_views import ActivitiesView
-from .views.AgregarDestinoView import AgregarDestinoView
 
 urlpatterns = [
     path('', ListarItinerariosView.as_view(), name='listar_itinerarios'),
@@ -13,6 +12,4 @@ urlpatterns = [
     path('hoteles/', HotelesView.as_view(), name='buscar_hoteles'),
     path('activities/', ActivitiesView.as_view(), name='buscar_actividades'),
     path('generar/', GenerarItinerarioView.as_view(), name='generar_itinerario'),
-    path('agregar-destino/', AgregarDestinoView.as_view(), name='agregar_destino'),
-
 ]

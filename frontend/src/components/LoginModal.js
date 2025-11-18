@@ -56,7 +56,9 @@ function LoginModal({ onClose, onLogin }) {
 
             const usuarioData = response.data.usuario;
             setMessage('Inicio de sesión exitoso ✅');
-            localStorage.setItem('usuario', JSON.stringify(usuarioData));
+            localStorage.setItem("access_token",response.data.token.access);
+            localStorage.setItem("refresh_token",response.data.token.refresh);
+            localStorage.setItem("usuario",JSON.stringify(usuarioData));
 
             onLogin(usuarioData);
             onClose();
