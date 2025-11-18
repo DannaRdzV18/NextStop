@@ -13,51 +13,10 @@ function ItinerariosCreados() {
     cargarItinerarios();
   }, []);
 
-  const cargarItinerarios = async () => {
-  try {
-    const token = localStorage.getItem("access_token");
-
-    if (!token) {
-      console.warn("No hay token, usuario no autenticado");
-      return;
-    }
-
-    const response = await fetch(`https://nextstop-app-u9cvd.ondigitalocean.app/api/itinerarios/`, {
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization":`Bearer ${token}`,
-      },
-    });
-
-    if (!response.ok) {
-      console.error("Error al cargar itinerarios");
-      return;
-    }
-
-    const data = await response.json();
-    const lista = data.results || data;
-
-    // 🔥 AQUÍ HAGO LA MAGIA: reconstruyo "datos"
-    const itinerariosAdaptados = lista.map(it => {
-      const detalles = it.detalles || [];
-
-      return {
-        ...it,
-
-        // 👇 reconstruimos lo que el front necesita
-        datos: {
-          origin: detalles[0]?.origen || "No especificado",
-          destinations: detalles.map(d => d.info_completa || {}),
-          budget: detalles[0]?.info_completa?.budget || 0
-        }
-      };
-    });
-
-    setItinerarios(itinerariosAdaptados);
-  } catch (error) {
-    console.error("Error cargando itinerarios:", error);
-  }
-};
+  const cargarItinerarios = () => {
+    const itinerariosGuardados = JSON.parse(localStorage.getItem('itinerarios')) || [];
+    setItinerarios(itinerariosGuardados);
+  };
 
   const eliminarItinerario = (id) => {
     const nuevosItinerarios = itinerarios.filter(it => it.id !== id);
@@ -79,34 +38,49 @@ function ItinerariosCreados() {
     return duration.replace('PT', '').replace('H', 'h ').replace('M', 'm');
   };
 
-  // Función para generar PDF - MEJORADA
+  // Función para generar PDF - CORREGIDA
   const generarPDF = async () => {
     if (!itinerarioSeleccionado) return;
 
-    const input = document.getElementById("modal-detalles-content");
-    if (!input) return;
-
     try {
-      // Crear un clon del elemento para no afectar la visualización
-      const clone = input.cloneNode(true);
-      clone.style.width = '700px'; // Ancho fijo para el PDF
-      clone.style.padding = '20px';
-      clone.style.fontSize = '12px'; // Tamaño de fuente más pequeño para PDF
-      document.body.appendChild(clone);
+      // Crear un elemento temporal para el PDF
+      const pdfContainer = document.createElement('div');
+      pdfContainer.style.position = 'absolute';
+      pdfContainer.style.left = '-9999px';
+      pdfContainer.style.top = '0';
+      pdfContainer.style.width = '800px';
+      pdfContainer.style.padding = '20px';
+      pdfContainer.style.background = 'white';
+      pdfContainer.style.fontSize = '14px';
+      pdfContainer.style.lineHeight = '1.4';
+      
+      // Clonar el contenido del modal
+      const originalContent = document.getElementById("modal-detalles-content");
+      const clonedContent = originalContent.cloneNode(true);
+      
+      // Limpiar estilos que puedan causar problemas
+      clonedContent.style.height = 'auto';
+      clonedContent.style.overflow = 'visible';
+      clonedContent.style.display = 'block';
+      clonedContent.style.opacity = '1';
+      
+      pdfContainer.appendChild(clonedContent);
+      document.body.appendChild(pdfContainer);
 
-      const canvas = await html2canvas(clone, {
-        scale: 2, // Mayor calidad
+      // Esperar a que se renderice el contenido clonado
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      const canvas = await html2canvas(pdfContainer, {
+        scale: 2,
         useCORS: true,
         logging: false,
-        width: 700, // Ancho específico
-        height: clone.scrollHeight,
-        windowWidth: 700,
+        width: pdfContainer.scrollWidth,
+        height: pdfContainer.scrollHeight,
+        windowWidth: pdfContainer.scrollWidth,
+        windowHeight: pdfContainer.scrollHeight,
         scrollX: 0,
         scrollY: 0
       });
-
-      // Remover el clon
-      document.body.removeChild(clone);
 
       const pdf = new jsPDF("p", "mm", "a4");
       const pdfWidth = pdf.internal.pageSize.getWidth();
@@ -116,25 +90,27 @@ function ItinerariosCreados() {
       const imgWidth = pdfWidth;
       const imgHeight = (canvas.height * pdfWidth) / canvas.width;
 
-      // Calcular cuántas páginas necesitamos
+      // Manejar múltiples páginas
       let heightLeft = imgHeight;
       let position = 0;
-      let pageNumber = 1;
 
       // Primera página
       pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
       heightLeft -= pdfHeight;
 
-      // Páginas adicionales si es necesario
+      // Páginas adicionales
       while (heightLeft > 0) {
         position = heightLeft - imgHeight;
         pdf.addPage();
         pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
         heightLeft -= pdfHeight;
-        pageNumber++;
       }
 
       pdf.save(`Itinerario_${itinerarioSeleccionado.nombre}.pdf`);
+      
+      // Limpiar
+      document.body.removeChild(pdfContainer);
+      
     } catch (err) {
       console.error("Error generando el PDF:", err);
       alert("Ocurrió un error al generar el PDF.");
@@ -237,7 +213,7 @@ function ItinerariosCreados() {
                   <h3>Destino {index + 1}: {destino.nombre}</h3>
                   <p><strong>Días:</strong> {destino.dias || "N/A"}</p>
 
-                  {/* Información de Hotel */}
+                  {/* Información de Hotel - CON CHECK-IN/CHECK-OUT */}
                   {destino.selectedHotel && (
                     <div className="hotel-info">
                       <h4>
@@ -249,6 +225,33 @@ function ItinerariosCreados() {
                       <p><strong>Precio por noche:</strong> {destino.selectedHotel.price ? 
                         `${convertToMXN(destino.selectedHotel.price, destino.selectedHotel.currency).toFixed(2)} MXN` 
                         : "N/A"}</p>
+                      
+                      {/* AGREGADO: Información de check-in y check-out */}
+                      <p><strong>Check-in:</strong> {destino.selectedHotel.checkIn || 
+                        (destino.flightDepartureDate ? 
+                          new Date(destino.flightDepartureDate).toLocaleDateString("es-MX") 
+                          : "N/A")}
+                      </p>
+                      <p><strong>Check-out:</strong> {destino.selectedHotel.checkOut || 
+                        (destino.flightDepartureDate && destino.dias ? 
+                          (() => {
+                            const checkOut = new Date(destino.flightDepartureDate);
+                            checkOut.setDate(checkOut.getDate() + Number(destino.dias));
+                            return checkOut.toLocaleDateString("es-MX");
+                          })() 
+                          : "N/A")}
+                      </p>
+                      
+                      {/* Información adicional del hotel si está disponible */}
+                      {destino.selectedHotel.city && (
+                        <p><strong>Ciudad:</strong> {destino.selectedHotel.city}</p>
+                      )}
+                      {destino.selectedHotel.address && (
+                        <p><strong>Dirección:</strong> {destino.selectedHotel.address}</p>
+                      )}
+                      {destino.selectedHotel.roomType && (
+                        <p><strong>Tipo de habitación:</strong> {destino.selectedHotel.roomType}</p>
+                      )}
                     </div>
                   )}
 
