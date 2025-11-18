@@ -104,9 +104,12 @@ function Navbar() {
 
                         {showMenu && (
                             <div className="dropdown-menu">
-                                <Link to="/itinerarios" onClick={() => setShowMenu(false)}>
-                                    Itinerarios creados
-                                </Link>
+                                {/* ✅ SOLO MOSTRAR "Itinerarios creados" SI HAY USUARIO LOGUEADO */}
+                                {usuario && (
+                                    <Link to="/itinerarios" onClick={() => setShowMenu(false)}>
+                                        Itinerarios creados
+                                    </Link>
+                                )}
                                 <Link to="/soporte" onClick={() => setShowMenu(false)}>
                                     Contactar a soporte
                                 </Link>
