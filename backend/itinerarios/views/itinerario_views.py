@@ -23,15 +23,24 @@ class CrearItinerarioView(APIView):
         if payload is None:
             return Response({"detail": "Invalid or missing token"}, status=401)
 
-        usuario_id = payload.get("user_id")  # Aquí debe ir user_id
+        # --- AQUÍ ESTÁ LA CORRECCIÓN ---
+        usuario_id = payload.get("usuario_id") or payload.get("user_id")
+        # --------------------------------
+
         if not usuario_id:
-            return Response({"detail": "Invalid token payload"}, status=401)
+            return Response(
+                {"detail": "Invalid token payload: missing user_id/usuario_id"},
+                status=401
+            )
 
         # --- Usuario ---
         try:
             usuario = Usuario.objects.get(id=usuario_id)
         except Usuario.DoesNotExist:
-            return Response({"detail": "User not found", "code": "user_not_found"}, status=404)
+            return Response(
+                {"detail": "User not found", "code": "user_not_found"},
+                status=404
+            )
 
         # --- Itinerario ---
         data = request.data
@@ -69,7 +78,16 @@ class ListarItinerariosView(APIView):
     def get(self, request):
 
         payload = request.auth
-        usuario_id = payload.get("user_id")
+
+        # --- MISMA CORRECCIÓN AQUÍ ---
+        usuario_id = payload.get("usuario_id") or payload.get("user_id")
+        # ------------------------------
+
+        if not usuario_id:
+            return Response(
+                {"detail": "Invalid token payload: missing user_id/usuario_id"},
+                status=401
+            )
 
         itinerarios = Itinerario.objects.filter(usuario_id=usuario_id)
 
