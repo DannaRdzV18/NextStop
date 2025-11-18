@@ -23,19 +23,16 @@ class CrearItinerarioView(APIView):
         if payload is None:
             return Response({"detail": "Invalid or missing token"}, status=401)
 
-        # --- AQUÍ ESTÁ LA CORRECCIÓN ---
+        # --- Obtener usuario_id del payload y convertir a int ---
         usuario_id = payload.get("usuario_id") or payload.get("user_id")
-        # --------------------------------
-
         if not usuario_id:
             return Response(
                 {"detail": "Invalid token payload: missing user_id/usuario_id"},
                 status=401
             )
 
-        # --- Usuario ---
         try:
-            usuario = Usuario.objects.get(id=usuario_id)
+            usuario = Usuario.objects.get(id=int(usuario_id))
         except Usuario.DoesNotExist:
             return Response(
                 {"detail": "User not found", "code": "user_not_found"},
@@ -76,20 +73,16 @@ class ListarItinerariosView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-
         payload = request.auth
 
-        # --- MISMA CORRECCIÓN AQUÍ ---
         usuario_id = payload.get("usuario_id") or payload.get("user_id")
-        # ------------------------------
-
         if not usuario_id:
             return Response(
                 {"detail": "Invalid token payload: missing user_id/usuario_id"},
                 status=401
             )
 
-        itinerarios = Itinerario.objects.filter(usuario_id=usuario_id)
+        itinerarios = Itinerario.objects.filter(usuario_id=int(usuario_id))
 
         paginator = PageNumberPagination()
         result_page = paginator.paginate_queryset(itinerarios, request)
