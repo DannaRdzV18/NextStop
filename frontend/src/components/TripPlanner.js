@@ -74,7 +74,7 @@ function TripPlanner() {
     return 0;
   };
 
-  // 🔹 Ya no requiere sesión
+  // 🔹 Estado del usuario
   const [usuario, setUsuario] = useState(() => {
     const storedUser = localStorage.getItem('usuario');
     return storedUser ? JSON.parse(storedUser) : null;
@@ -134,7 +134,14 @@ function TripPlanner() {
     return tripData.origin && tripData.departureDate && tripData.returnDate && totalPeople > 0 && tripData.budget;
   };
 
+  // ✅ MODIFICADO: Verificar si el usuario ha iniciado sesión antes de agregar destinos
   const handleOpenDestinationModal = () => {
+    // Verificar si el usuario ha iniciado sesión
+    if (!usuario) {
+      alert('Debes iniciar sesión para poder agregar destinos y planificar tu viaje.');
+      return;
+    }
+
     if (!areFieldsComplete()) {
       alert('Por favor completa todos los campos antes de agregar destinos.');
       return;
@@ -256,7 +263,7 @@ function TripPlanner() {
         </div>
       </div>
 
-      {/* Botón agregar destinos */}
+      {/* Botón agregar destinos - MANTENIDO IGUAL */}
       <div className="btn-container">
         <button className="add-destination-btn" onClick={handleOpenDestinationModal}>
           Agregar destinos →
