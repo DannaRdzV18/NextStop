@@ -9,7 +9,15 @@ import {
 } from "react-icons/fa";
 import { convertToMXN } from '../utils/convertToMXN';
 import "./FinalItineraryModal.css";
+import{refreshAccessToken} from '../utils/auth'
 
+function parseJwt(token) {
+  try {
+    return JSON.parse(atob(token.split('.')[1]));
+  } catch (e) {
+    return null;
+  }
+}
 function FinalItineraryModal({ onClose, tripData }) {
   if (!tripData) return null;
 
@@ -18,11 +26,20 @@ function FinalItineraryModal({ onClose, tripData }) {
   // Función para guardar el itinerario en localStorage
   const guardarItinerario = async () => {
   try {
-    const token = localStorage.getItem("access_token");
+    let token = localStorage.getItem("access_token");
 
+    // Si no hay token, intentamos refrescar
+    if (!token) {
+      token = await refreshAccessToken();
+    }
+    // Si el token existe pero está expirado → refrescar
+    const test = parseJwt(token);
+    if (test && (test.exp * 1000) < Date.now()) {
+      token = await refreshAccessToken();
+    }
     if (!token) {
       alert("Tu sesión expiró. Inicia sesión nuevamente.");
-      return;
+    return;
     }
 
     // Construimos los DETALLES como tu backend los espera
