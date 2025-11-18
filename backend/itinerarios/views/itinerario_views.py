@@ -3,7 +3,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
 from rest_framework_simplejwt.authentication import JWTAuthentication
-
+from rest_framework_simplejwt.backends import TokenBackend
+from django.conf import settings
 from itinerarios.models import DetalleItinerario
 from usuarios.models import Usuario
 from ..serializers import ItinerarioSerializer
@@ -47,4 +48,24 @@ class CrearItinerarioView(APIView):
                 personas=destino.get("personas", 1),
             )
 
-        return Response(ItinerarioSerializer(itinerario).data, status=201)
+        return Response(ItinerarioSerializer(itinerario).data,status=201)
+
+class ListarItinerariosView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+
+        # Igual que arriba: decodificar token
+        raw_token = request.auth
+        token_backend = TokenBackend(algorithm=settings.SIMPLE_JWT["ALGORITHM"])
+        payload = token_backend.decode(raw_token, verify=False)
+
+        usuario_id = payload.get("usuario_id")
+
+        itinerarios = Itinerario.objects.filter(usuario_id=usuario_id)
+
+        paginator = PageNumberPagination()
+        result_page = paginator.paginate_queryset(itinerarios, request)
+        serializer = ItinerarioSerializer(result_page, many=True)
+        return paginator.get_paginated_response(serializer.data)
