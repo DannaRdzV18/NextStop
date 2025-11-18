@@ -27,10 +27,13 @@ function DestinationModal({ onClose, onFinalize, addDestination, tripData, total
   const [selectedActivity, setSelectedActivity] = useState(null);
 
   const formatDate = (date) => {
-    if (!date) return "";
-    const d = new Date(date);
-    return d.toISOString().split("T")[0];
-  };
+      if (!date) return "";
+      const d = new Date(date);
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    };
 
   // ✅ CORREGIDO: Calcular el origen correcto para el vuelo
   const getFlightOrigin = () => {
@@ -63,11 +66,13 @@ function DestinationModal({ onClose, onFinalize, addDestination, tripData, total
 
   const flightOrigin = getFlightOrigin();
   const flightDepartureDate = getFlightDepartureDate();
+  const formattedDepartureDate = flightDepartureDate
+  ? new Date(flightDepartureDate).toLocaleDateString("es-MX"):"Sin fecha";
 
   const destinoDias = Number(days) || 0;
   const salida = new Date(flightDepartureDate || new Date());
   salida.setDate(salida.getDate() + destinoDias);
-  const formattedCheckOut = salida.toISOString().split("T")[0];
+  const formattedCheckOut = formatDate(salida);
 
   useEffect(() => {
     const fetchSuggestions = async () => {
@@ -196,6 +201,7 @@ function DestinationModal({ onClose, onFinalize, addDestination, tripData, total
       // ⭐⭐ SIEMPRE crear el destino, incluso sin selecciones
       const newDestination = {
         nombre: destination,
+        ciudad: displayName,
         dias: Number(days),
         flights: flights || [],
         hotels: hotels || [],
@@ -371,6 +377,7 @@ function DestinationModal({ onClose, onFinalize, addDestination, tripData, total
                         <p><strong>{h.name}</strong> ({h.rating}★)</p>
                         <p><strong>Precio por noche:</strong> {convertToMXN(h.price, h.currency).toFixed(2)} MXN</p>
                         <p><strong>Ubicación:</strong> {h.city}</p>
+                        <p><strong>Check-in: {h.checkIn && h.checkIn !== "" ? h.checkIn : formattedDepartureDate} | Check-out: {h.checkOut && h.checkOut !== "" ? h.checkOut : formattedCheckOut}</strong></p>
                       </div>
                     ))}
                     {noHotelsMessage && <p className="no-options">{noHotelsMessage}</p>}

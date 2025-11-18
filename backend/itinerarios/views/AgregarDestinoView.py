@@ -1,7 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
-from ..models import Itinerario, DetalleItinerario, ProveedorAPI
+from ..models import Itinerario, DetalleItinerario
 
 class AgregarDestinoView(APIView):
     permission_classes = [AllowAny]
@@ -18,20 +18,44 @@ class AgregarDestinoView(APIView):
         except Itinerario.DoesNotExist:
             return Response({"error": "Itinerario no encontrado"}, status=404)
 
-        # Crear detalle del destino
+        # ======================================================
+        # 🔥 NUEVO: Mapeo automático del formato del frontend
+        # ======================================================
+
+        ciudad = destino.get("nombre")  # viene del autocomplete
+        dias = destino.get("dias")
+
+        # Fechas: el front NO las manda explícitas, así que no las usamos aún
+        fecha_salida = destino.get("fecha_salida") or None
+        fecha_llegada = destino.get("fecha_llegada") or None
+
+        # personas: tomamos 1 por ahora
+        personas = destino.get("personas", 1)
+
+        # Guardar info completa (vuelos, hoteles, actividades)
+        info_completa = {
+            "vuelos": destino.get("flights", []),
+            "hoteles": destino.get("hotels", []),
+            "actividades": destino.get("activities", []),
+            "selectedFlight": destino.get("selectedFlight"),
+            "selectedHotel": destino.get("selectedHotel"),
+            "selectedActivity": destino.get("selectedActivity"),
+            "dias": dias
+        }
+
+        # ======================================================
+
+        nuevo_orden = DetalleItinerario.objects.filter(itinerario=itinerario).count() + 1
+
         DetalleItinerario.objects.create(
             itinerario=itinerario,
             tipo_item="DESTINO",
-            nombre_item=destino.get("ciudad", "Destino"),
-            fecha_salida=destino.get("fecha_salida"),
-            fecha_llegada=destino.get("fecha_llegada"),
-            personas=destino.get("personas", 1),
-            info_completa={
-                "vuelos": destino.get("info_vuelos", []),
-                "hoteles": destino.get("info_hoteles", []),
-                "actividades": destino.get("info_actividades", [])
-            },
-            orden=DetalleItinerario.objects.filter(itinerario=itinerario).count() + 1
+            nombre_item=ciudad or "Destino",
+            fecha_salida=fecha_salida,
+            fecha_llegada=fecha_llegada,
+            personas=personas,
+            info_completa=info_completa,
+            orden=nuevo_orden
         )
 
-        return Response({"mensaje": "Destino guardado como borrador."}, status=201)
+        return Response({"mensaje": "Destino guardado correctamente."}, status=201)
