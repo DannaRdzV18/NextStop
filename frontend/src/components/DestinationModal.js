@@ -27,32 +27,38 @@ function DestinationModal({ onClose, onFinalize, addDestination, tripData, total
   const [selectedActivity, setSelectedActivity] = useState(null);
 
   const formatDate = (date) => {
-    if (!date) return "";
-    const d = new Date(date);
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
-  };
+      if (!date) return "";
+      const d = new Date(date);
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    };
 
-  // Obtener origen (último destino o tripData.origin)
+  // ✅ CORREGIDO: Calcular el origen correcto para el vuelo
   const getFlightOrigin = () => {
+    // Si no hay destinos previos, usar el origen del tripData
     if (!currentDestinations || currentDestinations.length === 0) {
       return tripData?.origin || '';
     }
+
+    // Si hay destinos previos, usar el ÚLTIMO destino como origen
     const lastDestination = currentDestinations[currentDestinations.length - 1];
-    return lastDestination.nombre?.toUpperCase() || '';
+    return lastDestination.nombre || '';
   };
 
-  // Calcular fecha de salida para el siguiente vuelo (acumula días de destinos previos)
+  // ✅ CORREGIDO: Calcular la fecha de salida correcta
   const getFlightDepartureDate = () => {
     if (!currentDestinations || currentDestinations.length === 0) {
       return tripData?.departureDate ? formatDate(tripData.departureDate) : '';
     }
+
+    // Calcular fecha acumulando días de destinos anteriores
     let accumulatedDays = 0;
     currentDestinations.forEach(dest => {
       accumulatedDays += Number(dest.dias || 0);
     });
+
     const baseDate = new Date(tripData?.departureDate || new Date());
     baseDate.setDate(baseDate.getDate() + accumulatedDays);
     return formatDate(baseDate);
@@ -60,10 +66,11 @@ function DestinationModal({ onClose, onFinalize, addDestination, tripData, total
 
   const flightOrigin = getFlightOrigin();
   const flightDepartureDate = getFlightDepartureDate();
-  const formattedDepartureDate = flightDepartureDate ? new Date(flightDepartureDate).toLocaleDateString("es-MX") : "Sin fecha";
+  const formattedDepartureDate = flightDepartureDate
+  ? new Date(flightDepartureDate).toLocaleDateString("es-MX"):"Sin fecha";
 
   const destinoDias = Number(days) || 0;
-  const checkInDate = new Date(flightDepartureDate || new Date());
+  const checkInDate = new Date(flightDepartureDate);
   const checkOutDate = new Date(checkInDate);
   checkOutDate.setDate(checkOutDate.getDate() + destinoDias);
   const formattedCheckOut = formatDate(checkOutDate);
@@ -77,7 +84,7 @@ function DestinationModal({ onClose, onFinalize, addDestination, tripData, total
       setLoadingSuggestions(true);
       try {
         const res = await fetch(`https://nextstop-app-u9cvd.ondigitalocean.app/api/external/locations/?query=${encodeURIComponent(displayName)}`);
-        if (!res.ok) throw new Error('Error fetching locations');
+        if (!res.ok) throw new Error('Error');
         const data = await res.json();
         setSuggestions(data);
       } catch (err) {
@@ -99,20 +106,6 @@ function DestinationModal({ onClose, onFinalize, addDestination, tripData, total
   };
 
   const fetchOptions = async () => {
-    const usedDays = (currentDestinations || []).reduce(
-      (s, d) => s + Number(d.dias ?? d.days ?? 0),
-      0
-    );
-    const remainingDays = totalDays - usedDays;
-    const destinoDias = Number(days);
-
-    // Mantengo validación de totalDays (no es lógica de límite de presupuesto)
-    if (!totalDays || totalDays <= 0) {
-      console.error("❌ totalDays no válido:", totalDays);
-      setError("Los días totales del viaje no son válidos.");
-      return;
-    }
-
     if (!destination || !days || !tripData) return;
     const { adults } = tripData;
     const totalPeople = adults;
@@ -122,9 +115,11 @@ function DestinationModal({ onClose, onFinalize, addDestination, tripData, total
     setNoFlightsMessage(''); setNoHotelsMessage(''); setNoActivitiesMessage('');
 
     try {
-      // VUELOS
+      // ✅ CORREGIDO: Usar flightOrigin y flightDepartureDate en lugar del origen inicial
       const flightRes = await fetch(
-        `https://nextstop-app-u9cvd.ondigitalocean.app/api/external/vuelos/?origen=${encodeURIComponent(flightOrigin)}&destino=${encodeURIComponent(destination)}&fecha_salida=${flightDepartureDate}`);
+        `https://nextstop-app-u9cvd.ondigitalocean.app/api/external/vuelos/?origen=${encodeURIComponent(flightOrigin)}&destino=${encodeURIComponent(destination)}&fecha_salida=${flightDepartureDate}`
+      );
+
       if (flightRes.ok) {
         const flightData = await flightRes.json();
         if (!Array.isArray(flightData) || flightData.length === 0) {
@@ -135,9 +130,10 @@ function DestinationModal({ onClose, onFinalize, addDestination, tripData, total
         }
       }
 
-      // HOTELES
       const hotelRes = await fetch(
-        `https://nextstop-app-u9cvd.ondigitalocean.app/api/external/hoteles/?ciudad=${encodeURIComponent(destination)}&fecha_entrada=${flightDepartureDate}&fecha_salida=${formattedCheckOut}&personas=${totalPeople}`);
+        `https://nextstop-app-u9cvd.ondigitalocean.app/api/external/hoteles/?ciudad=${encodeURIComponent(destination)}&fecha_entrada=${flightDepartureDate}&fecha_salida=${formattedCheckOut}&personas=${totalPeople}`
+      );
+
       if (hotelRes.ok) {
         const hotelData = await hotelRes.json();
         if (!Array.isArray(hotelData) || hotelData.length === 0) {
@@ -148,9 +144,10 @@ function DestinationModal({ onClose, onFinalize, addDestination, tripData, total
         }
       }
 
-      // ACTIVIDADES
       const actRes = await fetch(
-        `https://nextstop-app-u9cvd.ondigitalocean.app/api/external/activities/?ciudad=${encodeURIComponent(destination)}&fecha_inicio=${flightDepartureDate}`);
+        `https://nextstop-app-u9cvd.ondigitalocean.app/api/external/activities/?ciudad=${encodeURIComponent(destination)}&fecha_inicio=${flightDepartureDate}`
+      );
+
       if (actRes.ok) {
         const actData = await actRes.json();
         if (!Array.isArray(actData) || actData.length === 0) {
@@ -192,7 +189,7 @@ function DestinationModal({ onClose, onFinalize, addDestination, tripData, total
     await fetchOptions();
   };
 
-  // Guardar destino
+  // ⭐⭐ FUNCIÓN SIMPLIFICADA PARA GUARDAR DESTINO
   const handleSaveDestination = async (action = 'close') => {
     console.log('🔄 Guardando destino...', { destination, days, action });
 
@@ -202,6 +199,7 @@ function DestinationModal({ onClose, onFinalize, addDestination, tripData, total
     }
 
     try {
+      // ⭐⭐ SIEMPRE crear el destino, incluso sin selecciones
       const newDestination = {
         nombre: destination,
         ciudad: displayName,
@@ -212,24 +210,32 @@ function DestinationModal({ onClose, onFinalize, addDestination, tripData, total
         selectedFlight: selectedFlight !== null ? flights[selectedFlight] : null,
         selectedHotel: selectedHotel !== null ? hotels[selectedHotel] : null,
         selectedActivity: selectedActivity !== null ? activities[selectedActivity] : null,
+        // ✅ AGREGADO: Información de origen y fecha real del vuelo
         flightOrigin: flightOrigin,
         flightDepartureDate: flightDepartureDate
       };
 
       console.log('📦 Nuevo destino a guardar:', newDestination);
 
+      // ⭐⭐ SIEMPRE llamar a addDestination para actualizar el estado del padre
       if (addDestination) {
+        console.log('🔄 Llamando addDestination...');
         addDestination(newDestination);
       } else {
-        console.warn('⚠ addDestination no está definido');
+        console.warn('⚠️ addDestination no está definido');
       }
 
+      // ⭐⭐ Diferentes acciones después de guardar
       if (action === 'close') {
+        console.log('🚪 Cerrando modal...');
         onClose && onClose();
       } else if (action === 'finalize') {
+        console.log('🎯 Finalizando itinerario...');
         onClose && onClose();
         onFinalize && onFinalize();
       } else if (action === 'continue') {
+        console.log('🔄 Continuando con siguiente destino...');
+        // Limpiar para el siguiente destino
         setDestination('');
         setDisplayName('');
         setDays('');
@@ -252,7 +258,7 @@ function DestinationModal({ onClose, onFinalize, addDestination, tripData, total
     }
   };
 
-  // Cálculos para botones
+  // 🔹 Cálculo para mostrar botones correctos
   const usedDays = (currentDestinations || []).reduce((s, d) => s + Number(d.dias ?? d.days ?? 0), 0);
   const remaining = totalDays - usedDays;
   const isLastDestination = remaining - Number(days) <= 0;
@@ -301,6 +307,7 @@ function DestinationModal({ onClose, onFinalize, addDestination, tripData, total
                 />
               </div>
 
+              {/* ✅ AGREGADO: Mostrar información de ruta actual */}
               <div className="ruta-info">
                 <p><strong>Ruta actual:</strong> {flightOrigin} → {destination || '?'}</p>
                 <p><strong>Fecha de salida:</strong> {flightDepartureDate}</p>
@@ -309,8 +316,12 @@ function DestinationModal({ onClose, onFinalize, addDestination, tripData, total
               {error && <p className="error-text">{error}</p>}
 
               <div className="destination-buttons">
-                <button className="destination-btn btn-show" onClick={handleShowOptions}>Mostrar opciones</button>
-                <button className="destination-btn btn-cancel" onClick={onClose}>Cancelar</button>
+                <button className="destination-btn btn-show" onClick={handleShowOptions}>
+                  Mostrar opciones
+                </button>
+                <button className="destination-btn btn-cancel" onClick={onClose}>
+                  Cancelar
+                </button>
               </div>
 
               <div className="info-link">
@@ -326,11 +337,13 @@ function DestinationModal({ onClose, onFinalize, addDestination, tripData, total
             <div className="options-section">
               {loadingOptions ? <p>Cargando opciones...</p> : (
                 <>
+                  {/* ✅ AGREGADO: Información de ruta en la sección de opciones */}
                   <div className="ruta-header">
                     <h4> Vuelos de {flightOrigin} a {destination}</h4>
                     <p>Fecha de salida: {flightDepartureDate}</p>
                   </div>
 
+                  {/* VUELOS */}
                   <div className="cards-section">
                     <h4>Vuelos disponibles</h4>
                     {flights.map((f, i) => {
@@ -338,7 +351,7 @@ function DestinationModal({ onClose, onFinalize, addDestination, tripData, total
                       return (
                         <div
                           key={i}
-                          className={card`${selectedFlight === i ? "selected" : ""}`}
+                          className={`card ${selectedFlight === i ? "selected" : ""}`}
                           onClick={() => setSelectedFlight(i)}
                         >
                           <p><strong>Aerolínea:</strong> {segment.carrierCode} | <strong>Vuelo:</strong> {segment.number}</p>
@@ -353,12 +366,13 @@ function DestinationModal({ onClose, onFinalize, addDestination, tripData, total
                     {noFlightsMessage && <p className="no-options">{noFlightsMessage}</p>}
                   </div>
 
+                  {/* HOTELES */}
                   <div className="cards-section">
                     <h4>Hoteles</h4>
                     {hotels.map((h, i) => (
                       <div
                         key={i}
-                        className={card`${selectedHotel === i ? "selected" : ""}`}
+                        className={`card ${selectedHotel === i ? "selected" : ""}`}
                         onClick={() => setSelectedHotel(i)}
                       >
                         <p><strong>{h.name}</strong> ({h.rating}★)</p>
@@ -370,18 +384,19 @@ function DestinationModal({ onClose, onFinalize, addDestination, tripData, total
                     {noHotelsMessage && <p className="no-options">{noHotelsMessage}</p>}
                   </div>
 
+                  {/* ACTIVIDADES */}
                   <div className="cards-section">
                     <h4>Actividades</h4>
                     {activities.map((a, i) => (
                       <div
                         key={i}
-                        className={card`${selectedActivity === i ? "selected" : ""}`}
+                        className={`card ${selectedActivity === i ? "selected" : ""}`}
                         onClick={() => setSelectedActivity(i)}
                       >
                         <p><strong>{a.name}</strong></p>
                         <p><strong>Tipo:</strong> {a.type || 'N/A'}</p>
                         <p><strong>Precio:</strong> {a.price && a.price !== 'N/A'
-                          ?`${convertToMXN(a.price, a.currency).toFixed(2)} MXN`
+                          ? `${convertToMXN(a.price, a.currency).toFixed(2)} MXN`
                           : 'N/A'}
                         </p>
                       </div>
@@ -394,14 +409,28 @@ function DestinationModal({ onClose, onFinalize, addDestination, tripData, total
           )}
         </div>
 
+        {/* ✅ BOTONES SIMPLIFICADOS */}
         {showOptions && (
           <div className="destination-buttons">
-            <button className="destination-btn btn-back" onClick={() => setShowOptions(false)}>Volver</button>
+            <button className="destination-btn btn-back" onClick={() => setShowOptions(false)}>
+              Volver
+            </button>
 
+            {/* 🔹 Solo mostrar "Agregar destino" o "Finalizar itinerario" */}
             {isLastDestination ? (
-              <button className="destination-btn btn-add" onClick={() => handleSaveDestination('finalize')}>Finalizar itinerario</button>
+              <button
+                className="destination-btn btn-add"
+                onClick={() => handleSaveDestination('finalize')}
+              >
+                Finalizar itinerario
+              </button>
             ) : (
-              <button className="destination-btn btn-add" onClick={() => handleSaveDestination('continue')}>Agregar destino</button>
+              <button
+                className="destination-btn btn-add"
+                onClick={() => handleSaveDestination('continue')}
+              >
+                Agregar destino
+              </button>
             )}
           </div>
         )}
