@@ -1,3 +1,5 @@
+from os import access
+
 import requests
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -71,7 +73,9 @@ class LoginUsuarioView(APIView):
                             status=status.HTTP_401_UNAUTHORIZED)
 
         refresh = RefreshToken.for_user(usuario)
-
+        refresh["usuarios_id"]=usuario.id
+        access=refresh.access_token
+        access["usuarios_id"]=usuario.id
         return Response({
             'mensaje': 'Login exitoso',
             'token': {
