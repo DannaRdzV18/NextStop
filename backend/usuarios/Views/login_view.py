@@ -73,9 +73,11 @@ class LoginUsuarioView(APIView):
                             status=status.HTTP_401_UNAUTHORIZED)
 
         refresh = RefreshToken.for_user(usuario)
-        refresh["usuarios_id"]=usuario.id
-        access=refresh.access_token
-        access["usuarios_id"]=usuario.id
+        refresh["user_id"] = usuario.id
+        refresh["email"] = usuario.email
+        access = refresh.access_token
+        access["user_id"] = usuario.id
+        access["email"] = usuario.email
         return Response({
             'mensaje': 'Login exitoso',
             'token': {

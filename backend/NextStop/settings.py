@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 import pymysql
 from dotenv import load_dotenv
+from datetime import timedelta
 
 # Cargar variables del archivo .env
 load_dotenv()
@@ -175,3 +176,8 @@ if not DEBUG:
     SECURE_SSL_REDIRECT = False
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+}
