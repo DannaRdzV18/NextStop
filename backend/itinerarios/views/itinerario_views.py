@@ -24,7 +24,7 @@ class CrearItinerarioView(APIView):
             return Response({"detail": "Invalid or missing token"}, status=401)
 
         # --- Obtener usuario_id del payload y convertir a int ---
-        usuario_id = payload.get("usuario_id") or payload.get("user_id")
+        usuario_id = payload.get("usuarios_id") or payload.get('usuario_id') or payload.get("user_id")
         if not usuario_id:
             return Response(
                 {"detail": "Invalid token payload: missing user_id/usuario_id"},
