@@ -25,7 +25,7 @@ class EliminarItinerarioView(APIView):
             itinerario = Itinerario.objects.get(id=pk, usuario_id=usuario_id)
             # Al ejecutar delete(), Django borrará en cascada los DetalleItinerario asociados
             itinerario.delete()
-            return Response({"detail": "Itinerario eliminado correctamente"}, status=204)  # 204 = No Content (Éxito)
+            return Response({"detail": "Itinerario eliminado correctamente"}, status=200)
         except Itinerario.DoesNotExist:
             return Response(
                 {"detail": "El itinerario no existe o no tienes permiso para eliminarlo."},
