@@ -24,13 +24,34 @@ function FinalItineraryModal({ onClose, tripData }) {
   const { destinations = [], budget = 0, origin = "", userName = "Usuario" } = tripData;
 
   // Función para guardar el itinerario en localStorage
-  const guardarItinerario = async () => {
+  // ... inicio de la función guardarItinerario ...
+const guardarItinerario = async () => {
   try {
     const headers = await getAuthHeaders();
+
+    // 👇👇👇 PEGA ESTO AQUÍ (INICIO) 👇👇👇
+    if (headers) {
+        try {
+            const token = headers.Authorization.split(" ")[1];
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            console.log("========================================");
+            console.log("🕵️ REVISIÓN DE DIAGNÓSTICO");
+            console.log("🔑 Token Payload:", payload);
+            console.log("🆔 User ID en Token:", payload.user_id || payload.id || payload.sub);
+            console.log("🌍 URL a la que vas a pegar:", "https://nextstop-app-u9cvd.ondigitalocean.app/api/itinerarios/crear/");
+            console.log("========================================");
+        } catch (err) {
+            console.log("Error imprimiendo debug:", err);
+        }
+    }
+    // 👆👆👆 PEGA ESTO AQUÍ (FIN) 👆👆👆
+
     if (!headers) {
       alert("Tu sesión expiró. Inicia sesión nuevamente.");
       return;
     }
+
+    // ... resto del código (const detalles = ...)
 
     // Construimos los DETALLES como tu backend los espera
     const detalles = tripData.destinations.map((destino, index) => ({
