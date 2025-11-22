@@ -12,6 +12,10 @@ from usuarios.models import Usuario
 from ..serializers import ItinerarioSerializer
 
 
+# itinerarios/views.py
+
+# ... (imports igual que antes) ...
+
 class CrearItinerarioView(APIView):
     authentication_classes = []
     permission_classes = []
@@ -19,9 +23,7 @@ class CrearItinerarioView(APIView):
     def post(self, request):
         print("🟢 INICIANDO PROCESO DE GUARDADO...")
         try:
-            # ==================================================================
-            # 1. VALIDACIÓN MANUAL DEL TOKEN
-            # ==================================================================
+            # 1. VALIDACIÓN MANUAL DEL TOKEN (Esto déjalo igual, funciona bien)
             auth_header = request.headers.get("Authorization")
             if not auth_header or not auth_header.startswith("Bearer "):
                 return Response({"detail": "Credenciales no proveídas."}, status=401)
@@ -33,61 +35,38 @@ class CrearItinerarioView(APIView):
             except TokenError as e:
                 return Response({"detail": "Token inválido", "error": str(e)}, status=401)
 
-            # ==================================================================
-            # 2. BÚSQUEDA DEL USUARIO
-            # ==================================================================
             try:
                 usuario = Usuario.objects.get(id=int(usuario_id))
-                print(f"✅ Usuario encontrado: {usuario.email}")
             except Usuario.DoesNotExist:
                 return Response({"detail": f"Usuario ID {usuario_id} no existe."}, status=404)
 
             # ==================================================================
-            # 3. GUARDADO DEL ITINERARIO (CON PROTECCIÓN)
+            # 3. GUARDADO SIMPLIFICADO (AQUÍ ESTÁ EL CAMBIO)
             # ==================================================================
-            # Usamos .copy() para evitar errores si request.data es inmutable
-            data = request.data.copy() if hasattr(request.data, 'copy') else request.data
-            detalles = data.pop("detalles", [])
 
-            print("📦 Datos recibidos para itinerario:", data)
+            # ❌ ANTES: Sacabas los detalles y los guardabas manualmente.
+            # detalles = data.pop("detalles", [])  <-- ESTO CAUSABA EL ERROR
 
-            serializer = ItinerarioSerializer(data=data)
+            # ✅ AHORA: Pasamos los datos COMPLETOS al serializer.
+            # Él se encargará de leer 'detalles' y guardarlos gracias a tu nuevo método create()
+
+            serializer = ItinerarioSerializer(data=request.data)  # Pasamos request.data directo
+
             if not serializer.is_valid():
-                print("❌ Error de validación en Serializer:", serializer.errors)
+                print("❌ Error de validación:", serializer.errors)
                 return Response(serializer.errors, status=400)
 
-            # Guardamos
+            # Guardamos (El serializer ya sabe guardar los detalles adentro)
             itinerario = serializer.save(usuario=usuario)
-            print(f"✅ Itinerario creado con ID: {itinerario.id}")
 
-            # --- Detalles ---
-            for index, destino in enumerate(detalles):
-                DetalleItinerario.objects.create(
-                    itinerario=itinerario,
-                    tipo_item="DESTINO",
-                    nombre_item=destino.get("destinos") or destino.get("nombre", "Destino"),
-                    dias=destino.get("dias", 1),
-                    info_completa=destino,
-                    orden=index + 1,
-                    origen=destino.get("origen", ""),
-                    destinos=destino.get("destinos", ""),
-                    costo_estimado=destino.get("costo_estimado", 0),
-                    presupuesto=destino.get("presupuesto", 0),
-                    personas=destino.get("personas", 1),
-                )
-
-            print("🎉 Todo guardado correctamente")
+            print(f"✅ Itinerario creado exitosamente: {itinerario.id}")
             return Response(ItinerarioSerializer(itinerario).data, status=201)
 
         except Exception as e:
-            # 🚨 AQUÍ CAPTURAMOS EL ERROR 500 Y LO MOSTRAMOS
-            print("🔴 ERROR CRÍTICO EN EL SERVIDOR:")
-            traceback.print_exc()  # Imprime la línea exacta en la consola del server
-            return Response({
-                "detail": "Ocurrió un error interno en el servidor.",
-                "error_real": str(e),  # Esto nos dirá qué pasó
-                "tipo_error": str(type(e))
-            }, status=500)
+            # ... (tu manejo de errores 500 igual que antes) ...
+            import traceback
+            traceback.print_exc()
+            return Response({"detail": str(e)}, status=500)
 
 
 class ListarItinerariosView(APIView):

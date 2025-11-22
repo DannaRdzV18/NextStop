@@ -21,7 +21,7 @@ function parseJwt(token) {
 function FinalItineraryModal({ onClose, tripData }) {
   if (!tripData) return null;
 
-  const { destinations = [], budget = 0, origin = "", userName = "Usuario" } = tripData;
+  const { destinations = [], budget = 0, origin = "", userName = "Usuario", departureDate, returnDate } = tripData;
 
   // Función para guardar el itinerario en localStorage
   // ... inicio de la función guardarItinerario ...
@@ -50,15 +50,12 @@ const guardarItinerario = async () => {
       alert("Tu sesión expiró. Inicia sesión nuevamente.");
       return;
     }
-
-    // ... resto del código (const detalles = ...)
-
     // Construimos los DETALLES como tu backend los espera
     const detalles = tripData.destinations.map((destino, index) => ({
       origen: tripData.origin || "",
       destinos: destino.nombre || "",
-      fecha_salida: null,
-      fecha_llegada: null,
+      departureDate,
+      returnDate,
       costo_estimado: destino.selectedHotel?.price || 0,
       orden: index + 1,
       personas: tripData.people || 1,
@@ -73,8 +70,8 @@ const guardarItinerario = async () => {
         headers: headers,
         body: JSON.stringify({
           nombre:`Itinerario ${new Date().toLocaleDateString("es-MX")}`,
-          fecha_inicio: null,
-          fecha_fin: null,
+          fecha_inicio: departureDate ? new Date(departureDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+          fecha_fin: returnDate ? new Date(returnDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
           notas: "",
           detalles: detalles,
         }),
