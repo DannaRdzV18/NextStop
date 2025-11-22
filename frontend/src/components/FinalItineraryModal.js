@@ -93,38 +93,74 @@ const guardarItinerario = async () => {
 };
 
   const handleDownloadPDF = async () => {
-    const input = document.getElementById("final-itinerary");
-    if (!input) return;
+  const input = document.getElementById("final-itinerary");
+  if (!input) return;
 
-    try {
-      const canvas = await html2canvas(input, {
-        scale: 2,
-        useCORS: true,
-        scrollY: -window.scrollY,
-      });
+  try {
+    // Forzar un re-renderizado completo antes de capturar
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // Asegurarse de que el modal esté visible y tenga su tamaño completo
+    input.style.display = 'block';
+    input.style.opacity = '1';
+    input.style.height = 'auto';
+    input.style.overflow = 'visible';
 
-      const pdf = new jsPDF("p", "mm", "a4");
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
+    const canvas = await html2canvas(input, {
+      scale: 2,
+      useCORS: true,
+      logging: false,
+      width: input.scrollWidth,
+      height: input.scrollHeight,
+      windowWidth: input.scrollWidth,
+      windowHeight: input.scrollHeight,
+      onclone: (clonedDoc) => {
+        // Asegurar que el clon también tenga los estilos correctos
+        const clonedElement = clonedDoc.getElementById("final-itinerary");
+        if (clonedElement) {
+          clonedElement.style.display = 'block';
+          clonedElement.style.opacity = '1';
+          clonedElement.style.height = 'auto';
+          clonedElement.style.overflow = 'visible';
+        }
+      }
+    });
 
-      const imgData = canvas.toDataURL("image/png");
-      const imgWidth = pdfWidth;
-      const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+    const pdf = new jsPDF("p", "mm", "a4");
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = pdf.internal.pageSize.getHeight();
 
-      pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
-      pdf.save("Itinerario.pdf");
-      
-      // ✅ GUARDAR ITINERARIO después de generar PDF
-      guardarItinerario();
-      
-    } catch (err) {
-      console.error("Error generando el PDF:", err);
-      alert("Ocurrió un error al generar el PDF.");
+    const imgData = canvas.toDataURL("image/png");
+    const imgWidth = pdfWidth;
+    const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+
+    // Si la imagen es más alta que una página, dividirla en múltiples páginas
+    let heightLeft = imgHeight;
+    let position = 0;
+
+    pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+    heightLeft -= pdfHeight;
+
+    // Agregar páginas adicionales si es necesario
+    while (heightLeft >= 0) {
+      position = heightLeft - imgHeight;
+      pdf.addPage();
+      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+      heightLeft -= pdfHeight;
     }
 
-    if (typeof onClose === "function") onClose();
-  };
+    pdf.save("Itinerario.pdf");
+    
+    // ✅ GUARDAR ITINERARIO después de generar PDF
+    guardarItinerario();
+    
+  } catch (err) {
+    console.error("Error generando el PDF:", err);
+    alert("Ocurrió un error al generar el PDF.");
+  }
 
+  if (typeof onClose === "function") onClose();
+};
   // ... (el resto de tus funciones se mantienen igual)
   const handleClose = () => {
     if (typeof onClose === "function") onClose();
