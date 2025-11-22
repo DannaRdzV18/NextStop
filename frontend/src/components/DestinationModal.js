@@ -76,6 +76,7 @@ function DestinationModal({ onClose, onFinalize, addDestination, tripData, total
   const formattedCheckOut = formatDate(checkOutDate);
 
   useEffect(() => {
+    if (destination) return;
     const fetchSuggestions = async () => {
       if (displayName.length < 2) {
         setSuggestions([]);
@@ -97,7 +98,7 @@ function DestinationModal({ onClose, onFinalize, addDestination, tripData, total
 
     const timer = setTimeout(fetchSuggestions, 300);
     return () => clearTimeout(timer);
-  }, [displayName]);
+  }, [displayName, destination]);
 
   const handleSelectSuggestion = (item) => {
     setDestination(item.codigo || '');
