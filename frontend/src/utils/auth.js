@@ -78,19 +78,34 @@ export async function validateToken() {
 /* ---------------------------------------------------------
    🧾 HEADERS AUTOMÁTICOS PARA PETICIONES PROTEGIDAS
 --------------------------------------------------------- */
+/* auth.js */
+
 export async function getAuthHeaders() {
   let token = getAccessToken();
 
-  const payload = JSON.parse(atob(token.split(".")[1]));
-  const expiration = payload.exp * 1000;
-
-  if (Date.now() >= expiration) {
-    token = await refreshAccessToken();
-    if (!token) return null;
+  // 🔴 AGREGA ESTAS 3 LÍNEAS DE SEGURIDAD AQUÍ:
+  if (!token) {
+    console.warn("No se encontró token en getAuthHeaders");
+    return null;
   }
+  // -----------------------------------------------------
 
-  return {
-    "Authorization":`Bearer ${token}`,
-    "Content-Type": "application/json"
-  };
+  // El resto de tu código sigue igual...
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    const expiration = payload.exp * 1000;
+
+    if (Date.now() >= expiration) {
+      token = await refreshAccessToken();
+      if (!token) return null;
+    }
+
+    return {
+      "Authorization": `Bearer ${token}`,
+      "Content-Type": "application/json"
+    };
+  } catch (error) {
+    console.error("Error procesando el token:", error);
+    return null;
+  }
 }
