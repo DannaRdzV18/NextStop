@@ -4,6 +4,7 @@ from .Views.verificar_view import VerificarCorreoView, VerificarLinkView, Reenvi
 from .Views.login_view import LoginUsuarioView
 from rest_framework_simplejwt.views import TokenRefreshView
 from .Views.validar_token_view import ValidarTokenView
+from .Views.editar_perfil import EditarPerfilView
 
 urlpatterns = [
     path('registrar/', RegistroUsuarioView.as_view(), name='registrar_usuario'),
@@ -13,5 +14,5 @@ urlpatterns = [
     path('login/', LoginUsuarioView.as_view(), name='login_usuario'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path("validar-token/", ValidarTokenView.as_view(), name="validar_token"),
-
+    path('editar/', EditarPerfilView.as_view(), name='editar_perfil'),
 ]
