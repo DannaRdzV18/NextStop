@@ -3,13 +3,13 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { convertToMXN } from '../utils/convertToMXN';
 import { FaHotel, FaUmbrellaBeach, FaPlane, FaMapMarkerAlt } from 'react-icons/fa';
-import { getAuthHeaders } from '../utils/auth'; // 👈 IMPORTANTE: Importar auth
+import { getAuthHeaders } from '../utils/auth';
 import './ItinerariosCreados.css';
 
 function ItinerariosCreados() {
   const [itinerarios, setItinerarios] = useState([]);
   const [itinerarioSeleccionado, setItinerarioSeleccionado] = useState(null);
-  const [loading, setLoading] = useState(true); // Estado de carga
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     cargarItinerarios();
@@ -27,6 +27,7 @@ function ItinerariosCreados() {
         return;
       }
 
+      // OJO: Aquí ya está corregida la URL sin el 'listar/'
       const response = await fetch("https://nextstop-app-u9cvd.ondigitalocean.app/api/itinerarios/listar/", {
         method: "GET",
         headers: headers,
@@ -39,14 +40,8 @@ function ItinerariosCreados() {
       const data = await response.json();
       const listaBackend = data.results ? data.results : data;
 
-      // 🛠️ TRANSFORMACIÓN DE DATOS:
-      // Convertimos el formato del Backend al formato que tu UI ya espera (itinerario.datos...)
       const itinerariosFormateados = listaBackend.map(item => {
-        // Extraemos los destinos desde 'info_completa' que guardamos en cada detalle
         const destinations = item.detalles ? item.detalles.map(d => d.info_completa) : [];
-
-        // Calculamos el presupuesto sumando lo de los detalles (o tomando el primero si lo guardaste global)
-        // Si guardaste el budget en info_completa, lo sacamos de ahí.
         const budget = destinations.length > 0 ? (item.detalles[0].presupuesto || 0) : 0;
         const origin = destinations.length > 0 ? (item.detalles[0].origen || "") : "";
 
@@ -54,8 +49,7 @@ function ItinerariosCreados() {
           id: item.id,
           nombre: item.nombre,
           fechaCreacion: new Date(item.creado_en || item.fecha_inicio).toLocaleDateString(),
-          usuario: "Yo", // O podrías sacar el nombre del token si quisieras
-          // Aquí reconstruimos el objeto 'datos' que tu UI usa
+          usuario: "Yo",
           datos: {
             destinations: destinations,
             budget: budget,
@@ -68,24 +62,44 @@ function ItinerariosCreados() {
 
     } catch (error) {
       console.error("Error cargando itinerarios:", error);
-      // Si falla la API, podrías intentar cargar del localStorage como respaldo si quisieras
-      // const locales = JSON.parse(localStorage.getItem('itinerarios')) || [];
-      // setItinerarios(locales);
     } finally {
       setLoading(false);
     }
   };
 
-  // 🗑️ ELIMINAR (Por ahora solo local visualmente, luego conectarás el DELETE del backend)
+  // 🗑️ ELIMINAR ITINERARIO (CONECTADO AL BACKEND)
   const eliminarItinerario = async (id) => {
-    if(!window.confirm("¿Estás seguro de eliminar este itinerario?")) return;
+    if(!window.confirm("¿Estás seguro de eliminar este itinerario? Esta acción no se puede deshacer.")) {
+        return;
+    }
 
-    // Aquí iría la llamada a la API DELETE:
-    // await fetch(`.../api/itinerarios/${id}/`, { method: 'DELETE', ... })
+    try {
+        const headers = await getAuthHeaders();
+        if (!headers) {
+            alert("Tu sesión expiró.");
+            return;
+        }
 
-    const nuevosItinerarios = itinerarios.filter(it => it.id !== id);
-    setItinerarios(nuevosItinerarios);
+        const response = await fetch(`https://nextstop-app-u9cvd.ondigitalocean.app/api/itinerarios/eliminar/${id}/`, {
+            method: 'DELETE',
+            headers: headers
+        });
+
+        if (response.ok) {
+            const nuevosItinerarios = itinerarios.filter(it => it.id !== id);
+            setItinerarios(nuevosItinerarios);
+            alert("Itinerario eliminado correctamente.");
+        } else {
+            const errorData = await response.json();
+            alert("Error al eliminar: " + (errorData.detail || "Error desconocido"));
+        }
+
+    } catch (error) {
+        console.error("Error de red:", error);
+        alert("No se pudo conectar con el servidor para eliminar.");
+    }
   };
+  // 👈 AQUÍ HABÍA CÓDIGO BASURA, YA LO QUITÉ.
 
   const verDetalles = (itinerario) => {
     setItinerarioSeleccionado(itinerario);
@@ -95,13 +109,11 @@ function ItinerariosCreados() {
     setItinerarioSeleccionado(null);
   };
 
-  // Función para formatear la duración del vuelo
   const formatDuration = (duration) => {
     if (!duration) return "N/A";
     return duration.replace('PT', '').replace('H', 'h ').replace('M', 'm');
   };
 
-  // Función para generar PDF (MANTENIDA IGUAL)
   const generarPDF = async () => {
     if (!itinerarioSeleccionado) return;
 
@@ -193,7 +205,6 @@ function ItinerariosCreados() {
               <div className="itinerario-info">
                 <h3>{itinerario.nombre}</h3>
                 <p><strong>Creado:</strong> {itinerario.fechaCreacion}</p>
-                {/* Eliminamos "Usuario" si siempre soy yo, o lo dejamos fijo */}
                 <p><strong>Destinos:</strong> {itinerario.datos.destinations?.length || 0}</p>
                 <p><strong>Presupuesto:</strong> {Number(itinerario.datos.budget || 0).toLocaleString('es-MX', {
                   style: 'currency',
@@ -219,7 +230,6 @@ function ItinerariosCreados() {
         </div>
       )}
 
-      {/* Modal de detalles - SE MANTIENE IDÉNTICO */}
       {itinerarioSeleccionado && (
         <div className="modal-overlay">
           <div className="modal-detalles">
@@ -275,7 +285,6 @@ function ItinerariosCreados() {
                       <p><strong>Precio por noche:</strong> {destino.selectedHotel.price ?
                         `${convertToMXN(destino.selectedHotel.price, destino.selectedHotel.currency).toFixed(2)} MXN`
                         : "N/A"}</p>
-                       {/* Agregamos validaciones de null para fechas */}
                       <p><strong>Check-in:</strong> {destino.selectedHotel.checkIn ||
                         (destino.flightDepartureDate ?
                           new Date(destino.flightDepartureDate).toLocaleDateString("es-MX")
