@@ -2,7 +2,6 @@ from django.db import models
 from django.utils import timezone
 from datetime import timedelta
 
-
 # 🔹 Función para evitar el error de serialización de lambdas
 def default_expiration():
     return timezone.now() + timedelta(minutes=1)
