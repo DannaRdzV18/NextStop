@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import Itinerario, DetalleItinerario
 
+
 class DetalleItinerarioSerializer(serializers.ModelSerializer):
     class Meta:
         model = DetalleItinerario
@@ -23,16 +24,27 @@ class ItinerarioSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Itinerario
-        fields = ["id_itinerario", "nombre", "fecha_inicio", "fecha_fin", "notas", "creado_en", "detalles"]
+        # 👇 CAMBIO 1: Usamos 'id' en lugar de 'id_itinerario'
+        # Django mapea automáticamente la columna 'id_itinerario' de la BD al campo 'id' en Python.
+        fields = ["id", "nombre", "fecha_inicio", "fecha_fin", "notas", "creado_en", "detalles"]
+
+        # Agregamos esto por seguridad para que no te pida 'creado_en' al guardar
+        read_only_fields = ["creado_en", "id"]
 
     def validate(self, data):
-        if data['fecha_fin'] < data['fecha_inicio']:
-            raise serializers.ValidationError("La fecha fin no puede ser anterior a la fecha inicio.")
+        # Validación de seguridad por si las fechas vienen nulas
+        if data.get('fecha_fin') and data.get('fecha_inicio'):
+            if data['fecha_fin'] < data['fecha_inicio']:
+                raise serializers.ValidationError("La fecha fin no puede ser anterior a la fecha inicio.")
         return data
 
     def create(self, validated_data):
-        detalles_data = validated_data.pop('detalles')
+        detalles_data = validated_data.pop('detalles', [])
         itinerario = Itinerario.objects.create(**validated_data)
+
         for detalle_data in detalles_data:
-            DetalleItinerario.objects.create(id_itinerario=itinerario, **detalle_data)
+            # 👇 CAMBIO 2: Usamos 'itinerario' (el nombre de la relación)
+            # En lugar de 'id_itinerario=itinerario', usamos la instancia directa.
+            DetalleItinerario.objects.create(itinerario=itinerario, **detalle_data)
+
         return itinerario
