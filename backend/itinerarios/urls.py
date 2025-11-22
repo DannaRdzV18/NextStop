@@ -6,7 +6,7 @@ from .views.generar_itinerario_views import GenerarItinerarioView
 from .views.activities_views import ActivitiesView
 
 urlpatterns = [
-    path('', ListarItinerariosView.as_view(), name='listar_itinerarios'),
+    path('listar/', ListarItinerariosView.as_view(), name='listar_itinerarios'),
     path('crear/', CrearItinerarioView.as_view(), name='crear_itinerario'),
     path('vuelos/', VuelosView.as_view(), name='buscar_vuelos'),
     path('hoteles/', HotelesView.as_view(), name='buscar_hoteles'),
