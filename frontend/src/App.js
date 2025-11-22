@@ -7,8 +7,21 @@ import Home from './pages/Home';
 import Soporte from './pages/Soporte';
 import ItinerariosCreados from './components/ItinerariosCreados';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import{ validateToken,logout} from "./utils/auth";
+import{useEffect} from "react";
 
 function App() {
+   useEffect(() => {
+    async function checkLoginStatus() {
+      const user = await validateToken();
+      if (!user) {
+        console.warn("Token inválido → cerrando sesión");
+        logout();
+      }
+    }
+
+    checkLoginStatus();
+  }, []);
   return (
     <Router basename="/nextstop-frontend2">
       <div className="App">

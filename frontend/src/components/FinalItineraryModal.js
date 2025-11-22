@@ -9,7 +9,7 @@ import {
 } from "react-icons/fa";
 import { convertToMXN } from '../utils/convertToMXN';
 import "./FinalItineraryModal.css";
-import{refreshAccessToken} from '../utils/auth'
+import{getAuthHeaders} from '../utils/auth'
 
 function parseJwt(token) {
   try {
@@ -26,20 +26,10 @@ function FinalItineraryModal({ onClose, tripData }) {
   // Función para guardar el itinerario en localStorage
   const guardarItinerario = async () => {
   try {
-    let token = localStorage.getItem("access_token");
-
-    // Si no hay token, intentamos refrescar
-    if (!token) {
-      token = await refreshAccessToken();
-    }
-    // Si el token existe pero está expirado → refrescar
-    const test = parseJwt(token);
-    if (test && (test.exp * 1000) < Date.now()) {
-      token = await refreshAccessToken();
-    }
-    if (!token) {
+    const headers = await getAuthHeaders();
+    if (!headers) {
       alert("Tu sesión expiró. Inicia sesión nuevamente.");
-    return;
+      return;
     }
 
     // Construimos los DETALLES como tu backend los espera
@@ -52,23 +42,20 @@ function FinalItineraryModal({ onClose, tripData }) {
       orden: index + 1,
       personas: tripData.people || 1,
       presupuesto: tripData.budget || 0,
-      info_completa: destino // guardamos todo por si lo necesitas
+      info_completa: destino
     }));
 
     const response = await fetch(
-      `https://nextstop-app-u9cvd.ondigitalocean.app/api/itinerarios/crear/`,
+      "https://nextstop-app-u9cvd.ondigitalocean.app/api/itinerarios/crear/",
       {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization":`Bearer ${token}`,
-        },
+        headers: headers,
         body: JSON.stringify({
-          nombre: `Itinerario ${new Date().toLocaleDateString('es-MX')}`,
+          nombre:`Itinerario ${new Date().toLocaleDateString("es-MX")}`,
           fecha_inicio: null,
           fecha_fin: null,
           notas: "",
-          detalles: detalles
+          detalles: detalles,
         }),
       }
     );
@@ -81,7 +68,6 @@ function FinalItineraryModal({ onClose, tripData }) {
 
     const data = await response.json();
     console.log("Itinerario guardado correctamente:", data);
-
   } catch (e) {
     console.error("Error:", e);
     alert("Error al guardar el itinerario.");
