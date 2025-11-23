@@ -79,15 +79,73 @@ function TravelMap({ origin, destinations, tripData }) {
     const geocoder = new window.google.maps.Geocoder();
     const bounds = new window.google.maps.LatLngBounds();
 
-    // Diccionario de aeropuertos
+    // Diccionario de aeropuertos COMPLETO
     const airportMap = {
+      // MÉXICO
       'VER': 'Veracruz, Mexico', 'CUN': 'Cancún, Mexico', 'GDL': 'Guadalajara, Mexico',
       'MTY': 'Monterrey, Mexico', 'MEX': 'Ciudad de México, Mexico', 'TIJ': 'Tijuana, Mexico',
       'MID': 'Mérida, Mexico', 'PVR': 'Puerto Vallarta, Mexico', 'SJD': 'Los Cabos, Mexico',
+      'HMO': 'Hermosillo, Mexico', 'OAX': 'Oaxaca, Mexico', 'TAM': 'Tampico, Mexico',
+      'ACA': 'Acapulco, Mexico', 'ZIH': 'Ixtapa-Zihuatanejo, Mexico', 'CUU': 'Chihuahua, Mexico',
+      'AGU': 'Aguascalientes, Mexico', 'BJX': 'León, Mexico', 'QRO': 'Querétaro, Mexico',
+      'SLP': 'San Luis Potosí, Mexico', 'REX': 'Reynosa, Mexico', 'MZT': 'Mazatlán, Mexico',
+      'CUL': 'Culiacán, Mexico', 'LAP': 'La Paz, Mexico', 'ZCL': 'Zacatecas, Mexico',
+      'DGO': 'Durango, Mexico', 'CVJ': 'Cuernavaca, Mexico', 'MLM': 'Morelia, Mexico',
+      'VSA': 'Villahermosa, Mexico', 'CPE': 'Campeche, Mexico', 'TRC': 'Torreón, Mexico',
+      'CME': 'Ciudad del Carmen, Mexico', 'TAP': 'Tapachula, Mexico', 'CJS': 'Ciudad Juárez, Mexico',
+      'NLD': 'Nuevo Laredo, Mexico', 'PAZ': 'Poza Rica, Mexico', 'UPN': 'Uruapan, Mexico',
+      'ZLO': 'Manzanillo, Mexico',
+      
+      // ESTADOS UNIDOS
       'JFK': 'New York, USA', 'LAX': 'Los Angeles, USA', 'MIA': 'Miami, USA',
       'ORD': 'Chicago, USA', 'DFW': 'Dallas, USA', 'IAH': 'Houston, USA',
-      'LHR': 'London, UK', 'CDG': 'Paris, France', 'FCO': 'Rome, Italy',
-      'MAD': 'Madrid, Spain', 'BCN': 'Barcelona, Spain', 'AMS': 'Amsterdam, Netherlands'
+      'ATL': 'Atlanta, USA', 'SFO': 'San Francisco, USA', 'LAS': 'Las Vegas, USA',
+      'MCO': 'Orlando, USA', 'SEA': 'Seattle, USA', 'BOS': 'Boston, USA',
+      'PHX': 'Phoenix, USA', 'DEN': 'Denver, USA', 'MSP': 'Minneapolis, USA',
+      'DTW': 'Detroit, USA', 'PHL': 'Philadelphia, USA', 'CLT': 'Charlotte, USA',
+      'SAN': 'San Diego, USA', 'PDX': 'Portland, USA', 'AUS': 'Austin, USA',
+      'BWI': 'Baltimore, USA', 'MSY': 'New Orleans, USA', 'SLC': 'Salt Lake City, USA',
+      'TPA': 'Tampa, USA',
+      
+      // EUROPA
+      'LHR': 'London, United Kingdom', 'CDG': 'Paris, France', 'MAD': 'Madrid, Spain',
+      'BCN': 'Barcelona, Spain', 'FCO': 'Rome, Italy', 'AMS': 'Amsterdam, Netherlands',
+      'FRA': 'Frankfurt, Germany', 'MUC': 'Munich, Germany', 'BER': 'Berlin, Germany',
+      'ZRH': 'Zurich, Switzerland', 'VIE': 'Vienna, Austria', 'LIS': 'Lisbon, Portugal',
+      'DUB': 'Dublin, Ireland', 'ATH': 'Athens, Greece', 'IST': 'Istanbul, Turkey',
+      'CPH': 'Copenhagen, Denmark', 'OSL': 'Oslo, Norway', 'ARN': 'Stockholm, Sweden',
+      'HEL': 'Helsinki, Finland', 'WAW': 'Warsaw, Poland', 'PRG': 'Prague, Czech Republic',
+      'BUD': 'Budapest, Hungary', 'OTP': 'Bucharest, Romania', 'SOF': 'Sofia, Bulgaria',
+      'BRU': 'Brussels, Belgium', 'MXP': 'Milan, Italy', 'VCE': 'Venice, Italy',
+      'NAP': 'Naples, Italy',
+      
+      // AMÉRICA DEL SUR
+      'GRU': 'São Paulo, Brazil', 'GIG': 'Rio de Janeiro, Brazil', 'EZE': 'Buenos Aires, Argentina',
+      'BOG': 'Bogotá, Colombia', 'LIM': 'Lima, Peru', 'SCL': 'Santiago, Chile',
+      'UIO': 'Quito, Ecuador', 'GYE': 'Guayaquil, Ecuador', 'CCS': 'Caracas, Venezuela',
+      'PTY': 'Panama City, Panama', 'MVD': 'Montevideo, Uruguay', 'ASU': 'Asunción, Paraguay',
+      
+      // ASIA
+      'NRT': 'Tokyo, Japan', 'HND': 'Tokyo, Japan', 'PEK': 'Beijing, China',
+      'PVG': 'Shanghai, China', 'HKG': 'Hong Kong', 'SIN': 'Singapore',
+      'ICN': 'Seoul, South Korea', 'BKK': 'Bangkok, Thailand', 'KUL': 'Kuala Lumpur, Malaysia',
+      'MNL': 'Manila, Philippines', 'DEL': 'New Delhi, India', 'BOM': 'Mumbai, India',
+      'DXB': 'Dubai, UAE', 'DOH': 'Doha, Qatar', 'TLV': 'Tel Aviv, Israel',
+      
+      // CANADÁ
+      'YYZ': 'Toronto, Canada', 'YVR': 'Vancouver, Canada', 'YUL': 'Montreal, Canada',
+      'YYC': 'Calgary, Canada', 'YEG': 'Edmonton, Canada', 'YOW': 'Ottawa, Canada',
+      
+      // OCEANÍA
+      'SYD': 'Sydney, Australia', 'MEL': 'Melbourne, Australia', 'BNE': 'Brisbane, Australia',
+      'AKL': 'Auckland, New Zealand',
+      
+      // CARIBE Y CENTROAMÉRICA
+      'SJO': 'San José, Costa Rica', 'SAL': 'San Salvador, El Salvador',
+      'GUA': 'Guatemala City, Guatemala', 'TGU': 'Tegucigalpa, Honduras',
+      'MGA': 'Managua, Nicaragua', 'HAV': 'Havana, Cuba', 'SJU': 'San Juan, Puerto Rico',
+      'PUJ': 'Punta Cana, Dominican Republic', 'SDQ': 'Santo Domingo, Dominican Republic',
+      'KIN': 'Kingston, Jamaica', 'BZE': 'Belize City, Belize'
     };
 
     // Función para geocodificar
