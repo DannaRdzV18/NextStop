@@ -27,11 +27,17 @@ function TravelMap({ origin, destinations, tripData }) {
   useEffect(() => {
     // Cargar el script de Google Maps si no está cargado
     if (!window.google) {
+      // Validar que existe la API key
+      const apiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
+
       const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY || 'AIzaSyBfeh1UInKlOVWDkUHaCpS_uRWKZoF5giE'}`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}`;
       script.async = true;
       script.defer = true;
       script.onload = () => initMap();
+      script.onerror = () => {
+        console.error('Error al cargar Google Maps API. Verifica que la API key sea válida.');
+      };
       document.head.appendChild(script);
     } else {
       initMap();
@@ -44,7 +50,7 @@ function TravelMap({ origin, destinations, tripData }) {
     // Geocodificar ubicaciones y crear el mapa
     const geocoder = new window.google.maps.Geocoder();
     const bounds = new window.google.maps.LatLngBounds();
-    
+
     // Inicializar el mapa con vista mundial
     const map = new window.google.maps.Map(mapRef.current, {
       zoom: 2,
@@ -52,14 +58,14 @@ function TravelMap({ origin, destinations, tripData }) {
       mapTypeControl: false,
       streetViewControl: false,
     });
-    
+
     mapInstanceRef.current = map;
 
     // Ciudades mexicanas conocidas
     const mexicanCities = [
-      'mexico', 'cdmx', 'guadalajara', 'monterrey', 'cancun', 'cancún', 
+      'mexico', 'cdmx', 'guadalajara', 'monterrey', 'cancun', 'cancún',
       'puebla', 'tijuana', 'mérida', 'merida', 'veracruz', 'acapulco',
-      'mazatlán', 'mazatlan', 'oaxaca', 'querétaro', 'queretaro', 
+      'mazatlán', 'mazatlan', 'oaxaca', 'querétaro', 'queretaro',
       'toluca', 'chihuahua', 'morelia', 'aguascalientes', 'hermosillo',
       'saltillo', 'mexicali', 'culiacán', 'culiacan', 'san luis potosí',
       'san luis potosi', 'tampico', 'cuernavaca', 'durango', 'zacatecas',
@@ -76,29 +82,29 @@ function TravelMap({ origin, destinations, tripData }) {
     // Función para geocodificar con reintentos
     const geocodeWithFallback = (cityName, markerConfig) => {
       if (!cityName) return;
-      
+
       const isMexico = isMexicanCity(cityName);
-      
+
       // Primera búsqueda: con país específico
-      let searchAddress = cityName.length <= 3 
-        ? `${cityName} airport` 
-        : isMexico 
-          ? `${cityName}, Mexico` 
+      let searchAddress = cityName.length <= 3
+        ? `${cityName} airport`
+        : isMexico
+          ? `${cityName}, Mexico`
           : cityName;
-      
+
       console.log(`🔍 Buscando: "${searchAddress}"`);
-      
+
       geocoder.geocode({ address: searchAddress }, (results, status) => {
         if (status === 'OK' && results[0]) {
           const location = results[0].geometry.location;
           console.log(`✅ ${markerConfig.title} geocodificado:`, results[0].formatted_address);
-          
+
           new window.google.maps.Marker({
             position: location,
             map: map,
             ...markerConfig
           });
-          
+
           bounds.extend(location);
           map.fitBounds(bounds);
         } else {
@@ -108,13 +114,13 @@ function TravelMap({ origin, destinations, tripData }) {
             if (status2 === 'OK' && results2[0]) {
               const location = results2[0].geometry.location;
               console.log(`✅ ${markerConfig.title} geocodificado (reintento):`, results2[0].formatted_address);
-              
+
               new window.google.maps.Marker({
                 position: location,
                 map: map,
                 ...markerConfig
               });
-              
+
               bounds.extend(location);
               map.fitBounds(bounds);
             } else {
@@ -132,7 +138,7 @@ function TravelMap({ origin, destinations, tripData }) {
     } else if (tripData?.origin) {
       originCity = tripData.origin;
     }
-    
+
     // Si el origen es un código de aeropuerto de 3 letras, buscar en ciudades comunes
     const airportToCityMap = {
       // MÉXICO
@@ -173,7 +179,7 @@ function TravelMap({ origin, destinations, tripData }) {
       'PAZ': 'Poza Rica, Mexico',
       'UPN': 'Uruapan, Mexico',
       'ZLO': 'Manzanillo, Mexico',
-      
+
       // ESTADOS UNIDOS
       'JFK': 'New York, USA',
       'LAX': 'Los Angeles, USA',
@@ -200,7 +206,7 @@ function TravelMap({ origin, destinations, tripData }) {
       'MSY': 'New Orleans, USA',
       'SLC': 'Salt Lake City, USA',
       'TPA': 'Tampa, USA',
-      
+
       // EUROPA
       'LHR': 'London, United Kingdom',
       'CDG': 'Paris, France',
@@ -230,7 +236,7 @@ function TravelMap({ origin, destinations, tripData }) {
       'MXP': 'Milan, Italy',
       'VCE': 'Venice, Italy',
       'NAP': 'Naples, Italy',
-      
+
       // AMÉRICA DEL SUR
       'GRU': 'São Paulo, Brazil',
       'GIG': 'Rio de Janeiro, Brazil',
@@ -244,7 +250,7 @@ function TravelMap({ origin, destinations, tripData }) {
       'PTY': 'Panama City, Panama',
       'MVD': 'Montevideo, Uruguay',
       'ASU': 'Asunción, Paraguay',
-      
+
       // ASIA
       'NRT': 'Tokyo, Japan',
       'HND': 'Tokyo, Japan',
@@ -261,7 +267,7 @@ function TravelMap({ origin, destinations, tripData }) {
       'DXB': 'Dubai, UAE',
       'DOH': 'Doha, Qatar',
       'TLV': 'Tel Aviv, Israel',
-      
+
       // CANADÁ
       'YYZ': 'Toronto, Canada',
       'YVR': 'Vancouver, Canada',
@@ -269,13 +275,13 @@ function TravelMap({ origin, destinations, tripData }) {
       'YYC': 'Calgary, Canada',
       'YEG': 'Edmonton, Canada',
       'YOW': 'Ottawa, Canada',
-      
+
       // OCEANÍA
       'SYD': 'Sydney, Australia',
       'MEL': 'Melbourne, Australia',
       'BNE': 'Brisbane, Australia',
       'AKL': 'Auckland, New Zealand',
-      
+
       // CARIBE Y CENTROAMÉRICA
       'SJO': 'San José, Costa Rica',
       'SAL': 'San Salvador, El Salvador',
@@ -289,13 +295,13 @@ function TravelMap({ origin, destinations, tripData }) {
       'KIN': 'Kingston, Jamaica',
       'BZE': 'Belize City, Belize'
     };
-    
+
     // Si es un código de aeropuerto, convertirlo
     if (originCity && originCity.length === 3 && airportToCityMap[originCity.toUpperCase()]) {
       originCity = airportToCityMap[originCity.toUpperCase()];
       console.log('🔄 Código de aeropuerto detectado, convertido a:', originCity);
     }
-    
+
     console.log('🗺️ Origen para mapa:', originCity);
 
     // Geocodificar origen
@@ -321,15 +327,15 @@ function TravelMap({ origin, destinations, tripData }) {
     // Geocodificar destinos
     destinations.forEach((destino, index) => {
       let destinoNombre = destino.nombre || destino.city || destino.destination;
-      
+
       // Convertir códigos de aeropuerto a nombres de ciudades
       if (destinoNombre && destinoNombre.length === 3 && airportToCityMap[destinoNombre.toUpperCase()]) {
         destinoNombre = airportToCityMap[destinoNombre.toUpperCase()];
         console.log(`🔄 Destino ${index + 1} - Código de aeropuerto detectado, convertido a:`, destinoNombre);
       }
-      
+
       console.log(`🗺️ Destino ${index + 1}:`, destinoNombre);
-      
+
       if (destinoNombre) {
         geocodeWithFallback(destinoNombre, {
           title: destinoNombre,
@@ -352,11 +358,11 @@ function TravelMap({ origin, destinations, tripData }) {
   };
 
   return (
-    <div 
-      ref={mapRef} 
-      style={{ 
-        width: '100%', 
-        height: '200px', 
+    <div
+      ref={mapRef}
+      style={{
+        width: '100%',
+        height: '200px',
         borderRadius: '8px',
         border: '1px solid #ddd'
       }}
@@ -440,7 +446,7 @@ function FinalItineraryModal({ onClose, tripData }) {
 
     try {
       await new Promise(resolve => setTimeout(resolve, 500));
-      
+
       input.style.display = 'block';
       input.style.opacity = '1';
       input.style.height = 'auto';
@@ -487,9 +493,9 @@ function FinalItineraryModal({ onClose, tripData }) {
       }
 
       pdf.save("Itinerario.pdf");
-      
+
       guardarItinerario();
-      
+
     } catch (err) {
       console.error("Error generando el PDF:", err);
       alert("Ocurrió un error al generar el PDF.");
@@ -556,29 +562,29 @@ function FinalItineraryModal({ onClose, tripData }) {
 
                     <div className="day-description">
                       <p><strong>Días:</strong> {destino.dias || "N/A"}</p>
-                      
+
                       <p>
                         <strong>Hotel:</strong>{" "}
                         {selectedHotel?.name
                           ? `${selectedHotel.name} (${selectedHotel.rating || "N/A"}★)`
-                          : hasOptions(destino, 'hotel') 
-                            ? "No seleccionado" 
+                          : hasOptions(destino, 'hotel')
+                            ? "No seleccionado"
                             : "No disponible"}
                       </p>
                       <p>
                         <strong>Precio por noche:</strong>{" "}
                         {selectedHotel?.price
                           ? `${convertToMXN(selectedHotel.price, selectedHotel.currency).toFixed(2)} MXN`
-                          : hasOptions(destino, 'hotel') 
-                            ? "Selecciona un hotel" 
+                          : hasOptions(destino, 'hotel')
+                            ? "Selecciona un hotel"
                             : "N/A"}
                       </p>
-                      
+
                       <p>
                         <strong>Actividad:</strong>{" "}
-                        {selectedActivity?.name || 
-                          (hasOptions(destino, 'activity') 
-                            ? "No seleccionada" 
+                        {selectedActivity?.name ||
+                          (hasOptions(destino, 'activity')
+                            ? "No seleccionada"
                             : "No disponible")}
                       </p>
                       {selectedActivity?.price && selectedActivity.price !== 'N/A' && (
@@ -595,7 +601,7 @@ function FinalItineraryModal({ onClose, tripData }) {
                               <FaPlaneDeparture /> &nbsp;
                               <strong>Vuelo Seleccionado</strong>
                             </div>
-                            
+
                             {selectedFlight.itineraries?.[0]?.segments?.map((segment, segIndex) => (
                               <div key={segIndex} className="flight-segment">
                                 <p>
@@ -603,25 +609,25 @@ function FinalItineraryModal({ onClose, tripData }) {
                                 </p>
                                 <p>
                                   <FaPlaneDeparture className="flight-icon" />{" "}
-                                  <strong>Salida:</strong> {segment.departure?.iataCode} 
-                                  {" "}({segment.departure?.at ? 
-                                    new Date(segment.departure.at).toLocaleDateString() + ", " + 
-                                    new Date(segment.departure.at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+                                  <strong>Salida:</strong> {segment.departure?.iataCode}
+                                  {" "}({segment.departure?.at ?
+                                    new Date(segment.departure.at).toLocaleDateString() + ", " +
+                                    new Date(segment.departure.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                                     : "N/A"})
                                 </p>
                                 <p>
                                   <FaPlaneArrival className="flight-icon" />{" "}
                                   <strong>Llegada:</strong> {segment.arrival?.iataCode}
-                                  {" "}({segment.arrival?.at ? 
-                                    new Date(segment.arrival.at).toLocaleDateString() + ", " + 
-                                    new Date(segment.arrival.at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+                                  {" "}({segment.arrival?.at ?
+                                    new Date(segment.arrival.at).toLocaleDateString() + ", " +
+                                    new Date(segment.arrival.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                                     : "N/A"})
                                 </p>
                                 <p>
                                   <strong>Duración:</strong> {formatDuration(selectedFlight.itineraries?.[0]?.duration)}
                                 </p>
                                 <p>
-                                  <strong>Precio:</strong> {selectedFlight.price?.total ? 
+                                  <strong>Precio:</strong> {selectedFlight.price?.total ?
                                     `${convertToMXN(selectedFlight.price.total, selectedFlight.price.currency).toFixed(2)} MXN`
                                     : "N/A"}
                                 </p>
