@@ -354,17 +354,18 @@ function TravelMap({ origin, destinations, tripData }) {
   };
 
   // ✅ useEffect SOLO para cargar el script (una sola vez)
+  // ✅ useEffect SOLO para cargar el script (con callback correcto)
   useEffect(() => {
     const loadGoogleMaps = () => {
       // Si el script ya se cargó, solo inicializar/actualizar el mapa
-      if (scriptLoadedRef.current && window.google) {
+      if (scriptLoadedRef.current && window.google?.maps?.Map) {
         console.log('✅ Google Maps ya cargado, actualizando mapa...');
         initMap();
         return;
       }
 
       // Si Google Maps ya existe (cargado por otro componente)
-      if (window.google) {
+      if (window.google?.maps?.Map) {
         console.log('✅ Google Maps detectado, inicializando...');
         scriptLoadedRef.current = true;
         initMap();
@@ -373,28 +374,31 @@ function TravelMap({ origin, destinations, tripData }) {
 
       // Cargar el script por primera vez
       const apiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
-      
+
       if (!apiKey) {
         console.error('❌ REACT_APP_GOOGLE_MAPS_API_KEY no configurada');
         return;
       }
 
       console.log('📥 Cargando Google Maps API...');
-      const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&loading=async`;
-      script.async = true;
-      script.defer = true;
-      
-      script.onload = () => {
-        console.log('✅ Google Maps cargado exitosamente');
+
+      // ✅ CRÍTICO: Definir la función callback ANTES de cargar el script
+      window.initGoogleMap = () => {
+        console.log('✅ Google Maps callback ejecutado');
         scriptLoadedRef.current = true;
         initMap();
       };
-      
+
+      const script = document.createElement('script');
+      // ✅ CRÍTICO: Usar el parámetro callback en lugar de onload
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&callback=initGoogleMap`;
+      script.async = true;
+      script.defer = true;
+
       script.onerror = () => {
         console.error('❌ Error al cargar Google Maps API');
       };
-      
+
       document.head.appendChild(script);
     };
 
