@@ -19,351 +19,141 @@ function parseJwt(token) {
   }
 }
 
-// ✅ NUEVO COMPONENTE: Mapa de Google Maps
+// ✅ COMPONENTE CORREGIDO: Mapa de Google Maps
 function TravelMap({ origin, destinations, tripData }) {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
+  const markersRef = useRef([]);
 
   useEffect(() => {
-    // Diagnóstico completo
-    console.log('===========================================');
-    console.log('🗺️ DIAGNÓSTICO DEL MAPA');
-    console.log('Variable de entorno:', process.env.REACT_APP_GOOGLE_MAPS_API_KEY ? 'EXISTE' : 'NO EXISTE');
-    console.log('window.google:', window.google ? 'YA CARGADO' : 'NO CARGADO');
-    console.log('===========================================');
-    
-    // Cargar el script de Google Maps si no está cargado
+    // Solo cargar una vez cuando el componente se monta
     if (!window.google) {
       const script = document.createElement('script');
-      // Usar la key directamente para debug
-      const apiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY || 'AIzaSyBfeh1UInKlOVWDkUHaCpS_uRWKZoF5giE';
-      console.log('🔑 API Key detectada:', apiKey ? 'SÍ (oculta por seguridad)' : 'NO');
+      // ⚠️ CAMBIA ESTA API KEY POR UNA VÁLIDA
+      const apiKey = 'AIzaSyBfeh1UInKlOVWDkUHaCpS_uRWKZoF5giE';
       script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}`;
       script.async = true;
       script.defer = true;
-      script.onload = () => {
-        console.log('✅ Script de Google Maps cargado correctamente');
-        initMap();
-      };
-      script.onerror = (error) => {
-        console.error('❌ Error cargando script de Google Maps:', error);
-      };
+      script.onload = () => initMap();
+      script.onerror = () => console.error('❌ Error cargando Google Maps');
       document.head.appendChild(script);
     } else {
-      console.log('✅ Google Maps ya estaba cargado, iniciando mapa...');
       initMap();
     }
-  }, [origin, destinations, tripData]);
+
+    // Cleanup al desmontar
+    return () => {
+      markersRef.current.forEach(marker => marker.setMap(null));
+      markersRef.current = [];
+    };
+  }, []); // Solo ejecutar UNA VEZ
+
+  // Actualizar cuando cambien los datos
+  useEffect(() => {
+    if (window.google && mapInstanceRef.current) {
+      updateMarkers();
+    }
+  }, [origin, destinations]);
 
   const initMap = () => {
     if (!mapRef.current || !window.google) return;
 
-    // Geocodificar ubicaciones y crear el mapa
-    const geocoder = new window.google.maps.Geocoder();
-    const bounds = new window.google.maps.LatLngBounds();
-    
-    // Inicializar el mapa con vista mundial
     const map = new window.google.maps.Map(mapRef.current, {
-      zoom: 2,
-      center: { lat: 20, lng: 0 }, // Vista mundial
+      zoom: 5,
+      center: { lat: 23.6345, lng: -102.5528 },
       mapTypeControl: false,
       streetViewControl: false,
     });
     
     mapInstanceRef.current = map;
+    updateMarkers();
+  };
 
-    // Ciudades mexicanas conocidas
-    const mexicanCities = [
-      'mexico', 'cdmx', 'guadalajara', 'monterrey', 'cancun', 'cancún', 
-      'puebla', 'tijuana', 'mérida', 'merida', 'veracruz', 'acapulco',
-      'mazatlán', 'mazatlan', 'oaxaca', 'querétaro', 'queretaro', 
-      'toluca', 'chihuahua', 'morelia', 'aguascalientes', 'hermosillo',
-      'saltillo', 'mexicali', 'culiacán', 'culiacan', 'san luis potosí',
-      'san luis potosi', 'tampico', 'cuernavaca', 'durango', 'zacatecas',
-      'los cabos', 'puerto vallarta', 'playa del carmen', 'tulum'
-    ];
+  const updateMarkers = () => {
+    if (!mapInstanceRef.current || !window.google) return;
 
-    // Función para determinar si es una ciudad mexicana
-    const isMexicanCity = (cityName) => {
-      if (!cityName) return false;
-      const normalized = cityName.toLowerCase().trim();
-      return mexicanCities.some(city => normalized.includes(city));
+    // Limpiar marcadores anteriores
+    markersRef.current.forEach(marker => marker.setMap(null));
+    markersRef.current = [];
+
+    const geocoder = new window.google.maps.Geocoder();
+    const bounds = new window.google.maps.LatLngBounds();
+
+    // Diccionario de aeropuertos
+    const airportMap = {
+      'VER': 'Veracruz, Mexico', 'CUN': 'Cancún, Mexico', 'GDL': 'Guadalajara, Mexico',
+      'MTY': 'Monterrey, Mexico', 'MEX': 'Ciudad de México, Mexico', 'TIJ': 'Tijuana, Mexico',
+      'MID': 'Mérida, Mexico', 'PVR': 'Puerto Vallarta, Mexico', 'SJD': 'Los Cabos, Mexico',
+      'JFK': 'New York, USA', 'LAX': 'Los Angeles, USA', 'MIA': 'Miami, USA',
+      'ORD': 'Chicago, USA', 'DFW': 'Dallas, USA', 'IAH': 'Houston, USA',
+      'LHR': 'London, UK', 'CDG': 'Paris, France', 'FCO': 'Rome, Italy',
+      'MAD': 'Madrid, Spain', 'BCN': 'Barcelona, Spain', 'AMS': 'Amsterdam, Netherlands'
     };
 
-    // Función para geocodificar con reintentos
-    const geocodeWithFallback = (cityName, markerConfig) => {
+    // Función para geocodificar
+    const geocodeCity = (cityName, label, isOrigin = false) => {
       if (!cityName) return;
-      
-      const isMexico = isMexicanCity(cityName);
-      
-      // Primera búsqueda: con país específico
-      let searchAddress = cityName.length <= 3 
-        ? `${cityName} airport` 
-        : isMexico 
-          ? `${cityName}, Mexico` 
-          : cityName;
-      
-      console.log(`🔍 Buscando: "${searchAddress}"`);
-      
-      geocoder.geocode({ address: searchAddress }, (results, status) => {
+
+      // Convertir código de aeropuerto
+      let searchCity = cityName;
+      if (cityName.length === 3 && airportMap[cityName.toUpperCase()]) {
+        searchCity = airportMap[cityName.toUpperCase()];
+      }
+
+      // Evitar duplicado de país
+      if (!searchCity.includes(',') && searchCity.toLowerCase().includes('mexico')) {
+        searchCity = searchCity + ', Mexico';
+      } else if (!searchCity.includes(',')) {
+        searchCity = searchCity;
+      }
+
+      geocoder.geocode({ address: searchCity }, (results, status) => {
         if (status === 'OK' && results[0]) {
           const location = results[0].geometry.location;
-          console.log(`✅ ${markerConfig.title} geocodificado:`, results[0].formatted_address);
           
-          new window.google.maps.Marker({
+          const marker = new window.google.maps.Marker({
             position: location,
-            map: map,
-            ...markerConfig
-          });
-          
-          bounds.extend(location);
-          map.fitBounds(bounds);
-        } else {
-          // Reintento sin ", Mexico"
-          console.log(`⚠️ Reintentando sin país: "${cityName}"`);
-          geocoder.geocode({ address: cityName }, (results2, status2) => {
-            if (status2 === 'OK' && results2[0]) {
-              const location = results2[0].geometry.location;
-              console.log(`✅ ${markerConfig.title} geocodificado (reintento):`, results2[0].formatted_address);
-              
-              new window.google.maps.Marker({
-                position: location,
-                map: map,
-                ...markerConfig
-              });
-              
-              bounds.extend(location);
-              map.fitBounds(bounds);
-            } else {
-              console.error(`❌ No se pudo geocodificar:`, cityName, status2);
+            map: mapInstanceRef.current,
+            title: searchCity,
+            label: {
+              text: label,
+              color: 'white',
+              fontWeight: 'bold'
+            },
+            icon: {
+              path: window.google.maps.SymbolPath.CIRCLE,
+              scale: 10,
+              fillColor: '#DC2626',
+              fillOpacity: 1,
+              strokeColor: '#991B1B',
+              strokeWeight: 2,
             }
           });
+
+          markersRef.current.push(marker);
+          bounds.extend(location);
+          
+          if (markersRef.current.length > 0) {
+            mapInstanceRef.current.fitBounds(bounds);
+          }
         }
       });
     };
-
-    // Obtener el origen correcto
-    let originCity = origin;
-    if (tripData?.originCity) {
-      originCity = tripData.originCity;
-    } else if (tripData?.origin) {
-      originCity = tripData.origin;
-    }
-    
-    // Si el origen es un código de aeropuerto de 3 letras, buscar en ciudades comunes
-    const airportToCityMap = {
-      // MÉXICO
-      'VER': 'Veracruz, Mexico',
-      'CUN': 'Cancún, Mexico',
-      'GDL': 'Guadalajara, Mexico',
-      'MTY': 'Monterrey, Mexico',
-      'MEX': 'Ciudad de México, Mexico',
-      'TIJ': 'Tijuana, Mexico',
-      'MID': 'Mérida, Mexico',
-      'PVR': 'Puerto Vallarta, Mexico',
-      'SJD': 'Los Cabos, Mexico',
-      'HMO': 'Hermosillo, Mexico',
-      'OAX': 'Oaxaca, Mexico',
-      'TAM': 'Tampico, Mexico',
-      'ACA': 'Acapulco, Mexico',
-      'ZIH': 'Ixtapa-Zihuatanejo, Mexico',
-      'CUU': 'Chihuahua, Mexico',
-      'AGU': 'Aguascalientes, Mexico',
-      'BJX': 'León, Mexico',
-      'QRO': 'Querétaro, Mexico',
-      'SLP': 'San Luis Potosí, Mexico',
-      'REX': 'Reynosa, Mexico',
-      'MZT': 'Mazatlán, Mexico',
-      'CUL': 'Culiacán, Mexico',
-      'LAP': 'La Paz, Mexico',
-      'ZCL': 'Zacatecas, Mexico',
-      'DGO': 'Durango, Mexico',
-      'CVJ': 'Cuernavaca, Mexico',
-      'MLM': 'Morelia, Mexico',
-      'VSA': 'Villahermosa, Mexico',
-      'CPE': 'Campeche, Mexico',
-      'TRC': 'Torreón, Mexico',
-      'CME': 'Ciudad del Carmen, Mexico',
-      'TAP': 'Tapachula, Mexico',
-      'CJS': 'Ciudad Juárez, Mexico',
-      'NLD': 'Nuevo Laredo, Mexico',
-      'PAZ': 'Poza Rica, Mexico',
-      'UPN': 'Uruapan, Mexico',
-      'ZLO': 'Manzanillo, Mexico',
-      
-      // ESTADOS UNIDOS
-      'JFK': 'New York, USA',
-      'LAX': 'Los Angeles, USA',
-      'MIA': 'Miami, USA',
-      'ORD': 'Chicago, USA',
-      'DFW': 'Dallas, USA',
-      'IAH': 'Houston, USA',
-      'ATL': 'Atlanta, USA',
-      'SFO': 'San Francisco, USA',
-      'LAS': 'Las Vegas, USA',
-      'MCO': 'Orlando, USA',
-      'SEA': 'Seattle, USA',
-      'BOS': 'Boston, USA',
-      'PHX': 'Phoenix, USA',
-      'DEN': 'Denver, USA',
-      'MSP': 'Minneapolis, USA',
-      'DTW': 'Detroit, USA',
-      'PHL': 'Philadelphia, USA',
-      'CLT': 'Charlotte, USA',
-      'SAN': 'San Diego, USA',
-      'PDX': 'Portland, USA',
-      'AUS': 'Austin, USA',
-      'BWI': 'Baltimore, USA',
-      'MSY': 'New Orleans, USA',
-      'SLC': 'Salt Lake City, USA',
-      'TPA': 'Tampa, USA',
-      
-      // EUROPA
-      'LHR': 'London, United Kingdom',
-      'CDG': 'Paris, France',
-      'MAD': 'Madrid, Spain',
-      'BCN': 'Barcelona, Spain',
-      'FCO': 'Rome, Italy',
-      'AMS': 'Amsterdam, Netherlands',
-      'FRA': 'Frankfurt, Germany',
-      'MUC': 'Munich, Germany',
-      'BER': 'Berlin, Germany',
-      'ZRH': 'Zurich, Switzerland',
-      'VIE': 'Vienna, Austria',
-      'LIS': 'Lisbon, Portugal',
-      'DUB': 'Dublin, Ireland',
-      'ATH': 'Athens, Greece',
-      'IST': 'Istanbul, Turkey',
-      'CPH': 'Copenhagen, Denmark',
-      'OSL': 'Oslo, Norway',
-      'ARN': 'Stockholm, Sweden',
-      'HEL': 'Helsinki, Finland',
-      'WAW': 'Warsaw, Poland',
-      'PRG': 'Prague, Czech Republic',
-      'BUD': 'Budapest, Hungary',
-      'OTP': 'Bucharest, Romania',
-      'SOF': 'Sofia, Bulgaria',
-      'BRU': 'Brussels, Belgium',
-      'MXP': 'Milan, Italy',
-      'VCE': 'Venice, Italy',
-      'NAP': 'Naples, Italy',
-      
-      // AMÉRICA DEL SUR
-      'GRU': 'São Paulo, Brazil',
-      'GIG': 'Rio de Janeiro, Brazil',
-      'EZE': 'Buenos Aires, Argentina',
-      'BOG': 'Bogotá, Colombia',
-      'LIM': 'Lima, Peru',
-      'SCL': 'Santiago, Chile',
-      'UIO': 'Quito, Ecuador',
-      'GYE': 'Guayaquil, Ecuador',
-      'CCS': 'Caracas, Venezuela',
-      'PTY': 'Panama City, Panama',
-      'MVD': 'Montevideo, Uruguay',
-      'ASU': 'Asunción, Paraguay',
-      
-      // ASIA
-      'NRT': 'Tokyo, Japan',
-      'HND': 'Tokyo, Japan',
-      'PEK': 'Beijing, China',
-      'PVG': 'Shanghai, China',
-      'HKG': 'Hong Kong',
-      'SIN': 'Singapore',
-      'ICN': 'Seoul, South Korea',
-      'BKK': 'Bangkok, Thailand',
-      'KUL': 'Kuala Lumpur, Malaysia',
-      'MNL': 'Manila, Philippines',
-      'DEL': 'New Delhi, India',
-      'BOM': 'Mumbai, India',
-      'DXB': 'Dubai, UAE',
-      'DOH': 'Doha, Qatar',
-      'TLV': 'Tel Aviv, Israel',
-      
-      // CANADÁ
-      'YYZ': 'Toronto, Canada',
-      'YVR': 'Vancouver, Canada',
-      'YUL': 'Montreal, Canada',
-      'YYC': 'Calgary, Canada',
-      'YEG': 'Edmonton, Canada',
-      'YOW': 'Ottawa, Canada',
-      
-      // OCEANÍA
-      'SYD': 'Sydney, Australia',
-      'MEL': 'Melbourne, Australia',
-      'BNE': 'Brisbane, Australia',
-      'AKL': 'Auckland, New Zealand',
-      
-      // CARIBE Y CENTROAMÉRICA
-      'SJO': 'San José, Costa Rica',
-      'SAL': 'San Salvador, El Salvador',
-      'GUA': 'Guatemala City, Guatemala',
-      'TGU': 'Tegucigalpa, Honduras',
-      'MGA': 'Managua, Nicaragua',
-      'HAV': 'Havana, Cuba',
-      'SJU': 'San Juan, Puerto Rico',
-      'PUJ': 'Punta Cana, Dominican Republic',
-      'SDQ': 'Santo Domingo, Dominican Republic',
-      'KIN': 'Kingston, Jamaica',
-      'BZE': 'Belize City, Belize'
-    };
-    
-    // Si es un código de aeropuerto, convertirlo
-    if (originCity && originCity.length === 3 && airportToCityMap[originCity.toUpperCase()]) {
-      originCity = airportToCityMap[originCity.toUpperCase()];
-      console.log('🔄 Código de aeropuerto detectado, convertido a:', originCity);
-    }
-    
-    console.log('🗺️ Origen para mapa:', originCity);
 
     // Geocodificar origen
+    let originCity = origin;
+    if (tripData?.originCity) originCity = tripData.originCity;
+    else if (tripData?.origin) originCity = tripData.origin;
+    
     if (originCity) {
-      geocodeWithFallback(originCity, {
-        title: originCity,
-        label: {
-          text: 'O',
-          color: 'white',
-          fontWeight: 'bold'
-        },
-        icon: {
-          path: window.google.maps.SymbolPath.CIRCLE,
-          scale: 10,
-          fillColor: '#DC2626',
-          fillOpacity: 1,
-          strokeColor: '#991B1B',
-          strokeWeight: 2,
-        }
-      });
+      geocodeCity(originCity, 'O', true);
     }
 
     // Geocodificar destinos
     destinations.forEach((destino, index) => {
-      let destinoNombre = destino.nombre || destino.city || destino.destination;
-      
-      // Convertir códigos de aeropuerto a nombres de ciudades
-      if (destinoNombre && destinoNombre.length === 3 && airportToCityMap[destinoNombre.toUpperCase()]) {
-        destinoNombre = airportToCityMap[destinoNombre.toUpperCase()];
-        console.log(`🔄 Destino ${index + 1} - Código de aeropuerto detectado, convertido a:`, destinoNombre);
-      }
-      
-      console.log(`🗺️ Destino ${index + 1}:`, destinoNombre);
-      
-      if (destinoNombre) {
-        geocodeWithFallback(destinoNombre, {
-          title: destinoNombre,
-          label: {
-            text: (index + 1).toString(),
-            color: 'white',
-            fontWeight: 'bold'
-          },
-          icon: {
-            path: window.google.maps.SymbolPath.CIRCLE,
-            scale: 10,
-            fillColor: '#DC2626',
-            fillOpacity: 1,
-            strokeColor: '#991B1B',
-            strokeWeight: 2,
-          }
-        });
+      const cityName = destino.nombre || destino.city || destino.destination;
+      if (cityName) {
+        geocodeCity(cityName, (index + 1).toString(), false);
       }
     });
   };
@@ -676,7 +466,6 @@ function FinalItineraryModal({ onClose, tripData }) {
             <p className="total-cost">{calcularCostoTotal()}</p>
 
             <div className="map-container">
-              {/* ✅ NUEVO: Componente del mapa */}
               <TravelMap origin={origin} destinations={destinations} tripData={tripData} />
             </div>
 
@@ -691,4 +480,3 @@ function FinalItineraryModal({ onClose, tripData }) {
 }
 
 export default FinalItineraryModal;
-    // ignoren esto 
