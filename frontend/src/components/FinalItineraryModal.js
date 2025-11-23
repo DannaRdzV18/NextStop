@@ -19,47 +19,41 @@ function parseJwt(token) {
   }
 }
 
-// ✅ NUEVO COMPONENTE: Mapa de Google Maps
+// ✅ COMPONENTE CORREGIDO: Mapa de Google Maps
 function TravelMap({ origin, destinations, tripData }) {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
+  const markersRef = useRef([]);
+  const scriptLoadedRef = useRef(false);
 
-  useEffect(() => {
-    // Cargar el script de Google Maps si no está cargado
-    if (!window.google) {
-      // Validar que existe la API key
-      const apiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
-
-      const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}`;
-      script.async = true;
-      script.defer = true;
-      script.onload = () => initMap();
-      script.onerror = () => {
-        console.error('Error al cargar Google Maps API. Verifica que la API key sea válida.');
-      };
-      document.head.appendChild(script);
-    } else {
-      initMap();
-    }
-  }, [origin, destinations, tripData]);
-
+  // ✅ Función initMap FUERA del useEffect
   const initMap = () => {
-    if (!mapRef.current || !window.google) return;
+    if (!mapRef.current || !window.google) {
+      console.log('⚠️ No se puede inicializar el mapa aún');
+      return;
+    }
 
-    // Geocodificar ubicaciones y crear el mapa
+    // ✅ Si el mapa ya existe, solo limpiar marcadores y actualizar
+    if (mapInstanceRef.current) {
+      console.log('🔄 Mapa ya existe, solo actualizando marcadores...');
+      // Limpiar marcadores anteriores
+      markersRef.current.forEach(marker => marker.setMap(null));
+      markersRef.current = [];
+    } else {
+      // ✅ Crear el mapa solo la primera vez
+      console.log('🗺️ Creando mapa por primera vez...');
+      const map = new window.google.maps.Map(mapRef.current, {
+        zoom: 2,
+        center: { lat: 20, lng: 0 },
+        mapTypeControl: false,
+        streetViewControl: false,
+      });
+      mapInstanceRef.current = map;
+    }
+
+    // Geocodificar ubicaciones y crear marcadores
     const geocoder = new window.google.maps.Geocoder();
     const bounds = new window.google.maps.LatLngBounds();
-
-    // Inicializar el mapa con vista mundial
-    const map = new window.google.maps.Map(mapRef.current, {
-      zoom: 2,
-      center: { lat: 20, lng: 0 }, // Vista mundial
-      mapTypeControl: false,
-      streetViewControl: false,
-    });
-
-    mapInstanceRef.current = map;
 
     // Ciudades mexicanas conocidas
     const mexicanCities = [
@@ -99,14 +93,15 @@ function TravelMap({ origin, destinations, tripData }) {
           const location = results[0].geometry.location;
           console.log(`✅ ${markerConfig.title} geocodificado:`, results[0].formatted_address);
 
-          new window.google.maps.Marker({
+          const marker = new window.google.maps.Marker({
             position: location,
-            map: map,
+            map: mapInstanceRef.current,
             ...markerConfig
           });
 
+          markersRef.current.push(marker);
           bounds.extend(location);
-          map.fitBounds(bounds);
+          mapInstanceRef.current.fitBounds(bounds);
         } else {
           // Reintento sin ", Mexico"
           console.log(`⚠️ Reintentando sin país: "${cityName}"`);
@@ -115,14 +110,15 @@ function TravelMap({ origin, destinations, tripData }) {
               const location = results2[0].geometry.location;
               console.log(`✅ ${markerConfig.title} geocodificado (reintento):`, results2[0].formatted_address);
 
-              new window.google.maps.Marker({
+              const marker = new window.google.maps.Marker({
                 position: location,
-                map: map,
+                map: mapInstanceRef.current,
                 ...markerConfig
               });
 
+              markersRef.current.push(marker);
               bounds.extend(location);
-              map.fitBounds(bounds);
+              mapInstanceRef.current.fitBounds(bounds);
             } else {
               console.error(`❌ No se pudo geocodificar:`, cityName, status2);
             }
@@ -356,6 +352,63 @@ function TravelMap({ origin, destinations, tripData }) {
       }
     });
   };
+
+  // ✅ useEffect SOLO para cargar el script (una sola vez)
+  useEffect(() => {
+    const loadGoogleMaps = () => {
+      // Si el script ya se cargó, solo inicializar/actualizar el mapa
+      if (scriptLoadedRef.current && window.google) {
+        console.log('✅ Google Maps ya cargado, actualizando mapa...');
+        initMap();
+        return;
+      }
+
+      // Si Google Maps ya existe (cargado por otro componente)
+      if (window.google) {
+        console.log('✅ Google Maps detectado, inicializando...');
+        scriptLoadedRef.current = true;
+        initMap();
+        return;
+      }
+
+      // Cargar el script por primera vez
+      const apiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
+      
+      if (!apiKey) {
+        console.error('❌ REACT_APP_GOOGLE_MAPS_API_KEY no configurada');
+        return;
+      }
+
+      console.log('📥 Cargando Google Maps API...');
+      const script = document.createElement('script');
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&loading=async`;
+      script.async = true;
+      script.defer = true;
+      
+      script.onload = () => {
+        console.log('✅ Google Maps cargado exitosamente');
+        scriptLoadedRef.current = true;
+        initMap();
+      };
+      
+      script.onerror = () => {
+        console.error('❌ Error al cargar Google Maps API');
+      };
+      
+      document.head.appendChild(script);
+    };
+
+    loadGoogleMaps();
+  }, []); // ✅ Array vacío = solo se ejecuta UNA VEZ al montar
+
+  // ✅ useEffect separado para actualizar cuando cambien los datos
+  useEffect(() => {
+    // Solo actualizar si el mapa ya está cargado
+    if (scriptLoadedRef.current && window.google && mapInstanceRef.current) {
+      console.log('🔄 Datos cambiaron, actualizando mapa...');
+      initMap();
+    }
+  }, [origin, destinations]); // ✅ Solo escuchar origin y destinations
 
   return (
     <div
@@ -665,7 +718,7 @@ function FinalItineraryModal({ onClose, tripData }) {
             <p className="total-cost">{calcularCostoTotal()}</p>
 
             <div className="map-container">
-              {/* ✅ NUEVO: Componente del mapa */}
+              {/* ✅ Componente del mapa corregido */}
               <TravelMap origin={origin} destinations={destinations} tripData={tripData} />
             </div>
 
