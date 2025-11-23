@@ -187,3 +187,18 @@
 .flight-icon {
   color: #3a5124;
 }
+/* Estilos para el contenedor del mapa */
+.map-container {
+  margin-top: 20px;
+  width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Asegurar que el mapa se vea bien en el PDF */
+.map-container > div {
+  width: 100% !important;
+  height: 200px !important;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+}
