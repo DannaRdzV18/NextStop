@@ -691,3 +691,4 @@ function FinalItineraryModal({ onClose, tripData }) {
 }
 
 export default FinalItineraryModal;
+    // ignoren esto 
