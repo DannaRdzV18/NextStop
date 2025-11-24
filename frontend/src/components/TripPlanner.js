@@ -263,7 +263,7 @@ function TripPlanner() {
         </div>
       </div>
 
-      {/* Botón agregar destinos - MANTENIDO IGUAL */}
+      {/* Botón agregar destinos */}
       <div className="btn-container">
         <button className="add-destination-btn" onClick={handleOpenDestinationModal}>
           Agregar destinos →
@@ -285,7 +285,7 @@ function TripPlanner() {
         />
       )}
 
-      {/* ✅ Modal final de itinerario CON NOMBRE DE USUARIO */}
+      {/* Modal final de itinerario */}
       {showItineraryModal && (
         <FinalItineraryModal
           onClose={() => {
@@ -303,9 +303,6 @@ function TripPlanner() {
       {showPersonModal && (
         <div className="modal-overlay">
           <div className="person-modal">
-            <button className="close-modal-btn" onClick={() => setShowPersonModal(false)}>
-              ✕
-            </button>
             <h3>Personas</h3>
             <p className="modal-subtitle">¿Cuántos van?</p>
 
@@ -374,6 +371,14 @@ function TripPlanner() {
                 </button>
               </div>
             </div>
+
+            {/* Botón Aceptar */}
+            <button 
+              className="accept-persons-btn"
+              onClick={() => setShowPersonModal(false)}
+            >
+              Aceptar
+            </button>
           </div>
         </div>
       )}
