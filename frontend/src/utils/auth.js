@@ -1,3 +1,5 @@
+/* src/utils/auth.js */
+
 const API_URL = "https://nextstop-app-u9cvd.ondigitalocean.app/api/usuarios";
 
 export function getAccessToken() {
@@ -16,6 +18,9 @@ export function saveTokens(access, refresh) {
 export function logout() {
   localStorage.removeItem("access_token");
   localStorage.removeItem("refresh_token");
+  localStorage.removeItem("usuario");
+  // Opcional: Si quieres forzar la recarga para limpiar estados de React
+  // window.location.reload(); 
 }
 
 /* ---------------------------------------------------------
@@ -26,40 +31,63 @@ export async function refreshAccessToken() {
   if (!refresh) return null;
 
   try {
-    const res = await fetch(`${API_URL}/token/refresh/`,{
+    const res = await fetch(`${API_URL}/token/refresh/`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ refresh })
     });
 
     if (!res.ok) {
-      console.warn("No se pudo refrescar el token.");
+      console.warn("El refresh token también expiró. Cerrando sesión...");
       logout();
       return null;
     }
 
     const data = await res.json();
-    saveTokens(data.access, refresh);
+    // Guardamos el nuevo access token (y el refresh si el backend lo rota)
+    saveTokens(data.access, data.refresh || refresh);
     return data.access;
 
   } catch (err) {
-    console.error("Error refrescando token:", err);
+    console.error("Error intentando refrescar token:", err);
     return null;
   }
 }
 
 /* ---------------------------------------------------------
-   🛡 VALIDAR ACCESS TOKEN CON EL BACKEND
+   🛡 VALIDAR TOKEN (VERSIÓN MEJORADA 🌟)
+   Revisa la fecha localmente antes de preguntar al backend.
 --------------------------------------------------------- */
 export async function validateToken() {
-  const token = getAccessToken();
+  let token = getAccessToken();
   if (!token) return false;
 
+  // 1. CHEQUEO LOCAL DE EXPIRACIÓN
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    const expiration = payload.exp * 1000; // Convertir a milisegundos
+
+    // Si ya expiró o le faltan menos de 10 segundos para expirar
+    if (Date.now() >= expiration - 10000) {
+      console.log("⚠ Token expirado o por expirar. Intentando auto-renovación...");
+      token = await refreshAccessToken();
+
+      // Si falló la renovación, la sesión murió.
+      if (!token) {
+        return false;
+      }
+    }
+  } catch (e) {
+    console.error("Error al analizar fecha del token:", e);
+    return false;
+  }
+
+  // 2. VALIDACIÓN CON EL BACKEND (Con token fresco)
   try {
     const res = await fetch(`${API_URL}/validar-token/`, {
       method: "GET",
       headers: {
-        "Authorization":`Bearer ${token}`,
+        "Authorization": `Bearer ${token}`,
         "Content-Type": "application/json",
       }
     });
@@ -70,31 +98,27 @@ export async function validateToken() {
     return data.usuario;
 
   } catch (err) {
-    console.error("Error validando token:", err);
+    console.error("Error de conexión validando token:", err);
     return false;
   }
 }
 
 /* ---------------------------------------------------------
-   🧾 HEADERS AUTOMÁTICOS PARA PETICIONES PROTEGIDAS
+   🧾 HEADERS AUTOMÁTICOS
 --------------------------------------------------------- */
-/* auth.js */
-
 export async function getAuthHeaders() {
   let token = getAccessToken();
 
-  // 🔴 AGREGA ESTAS 3 LÍNEAS DE SEGURIDAD AQUÍ:
   if (!token) {
     console.warn("No se encontró token en getAuthHeaders");
     return null;
   }
-  // -----------------------------------------------------
 
-  // El resto de tu código sigue igual...
   try {
     const payload = JSON.parse(atob(token.split(".")[1]));
     const expiration = payload.exp * 1000;
 
+    // Si venció, lo refrescamos al vuelo
     if (Date.now() >= expiration) {
       token = await refreshAccessToken();
       if (!token) return null;
