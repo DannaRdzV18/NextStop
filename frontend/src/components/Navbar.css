@@ -214,3 +214,18 @@
     transform: translateY(0);
   }
 }
+
+/* Logo clickeable */
+.logo {
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: opacity 0.3s ease;
+}
+
+.logo:hover {
+    opacity: 0.85;
+}

@@ -51,7 +51,7 @@ function Navbar() {
         <>
             <nav className="navbar">
                 <div className="navbar-left">
-                    <div className="logo">
+                    <Link to="/" className="logo">
                         <div className="logo-icon">
                             <img src={logo} alt="NextStop Logo" className="logo-image" />
                         </div>
@@ -59,7 +59,7 @@ function Navbar() {
                             <h1>NEXTSTOP</h1>
                             <p>Travel Planner</p>
                         </div>
-                    </div>
+                    </Link>
                 </div>
 
                 <div className="navbar-right">
