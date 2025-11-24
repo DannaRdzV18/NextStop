@@ -136,8 +136,8 @@ function TripPlanner() {
 
   // ✅ MODIFICADO: Verificar si el usuario ha iniciado sesión antes de agregar destinos
   const handleOpenDestinationModal = () => {
-    // Verificar si el usuario ha iniciado sesión
-    if (!usuario) {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
       alert('Debes iniciar sesión para poder agregar destinos y planificar tu viaje.');
       return;
     }
