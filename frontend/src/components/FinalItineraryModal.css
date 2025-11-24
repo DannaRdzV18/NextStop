@@ -203,3 +203,68 @@
   border: 1px solid #ddd;
 }
 /* Cambio para ver si funciona la API*/
+/* 💰 SECCIÓN DE COMPARACIÓN DE COSTOS */
+.cost-comparison {
+  background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+  border-radius: 12px;
+  padding: 20px;
+  margin: 20px 0;
+  width: 100%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.cost-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  font-size: 1rem;
+}
+
+.cost-label {
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.cost-value {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: #2c3e50;
+}
+
+.cost-value.cost-ok {
+  color: #27ae60;
+}
+
+.cost-value.cost-over {
+  color: #e74c3c;
+}
+
+.cost-divider {
+  border: none;
+  border-top: 2px solid #bdc3c7;
+  margin: 15px 0;
+}
+
+.cost-difference {
+  background-color: rgba(255, 255, 255, 0.6);
+  border-radius: 8px;
+  padding: 12px 10px;
+  margin-top: 10px;
+}
+
+.cost-difference.positive {
+  border-left: 4px solid #27ae60;
+}
+
+.cost-difference.negative {
+  border-left: 4px solid #e74c3c;
+}
+
+.cost-difference .cost-label {
+  font-size: 1.1rem;
+}
+
+.cost-difference .cost-value {
+  font-size: 1.3rem;
+}

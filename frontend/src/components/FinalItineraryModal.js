@@ -64,7 +64,7 @@ function TravelMap({ origin, destinations, tripData }) {
       mapTypeControl: false,
       streetViewControl: false,
     });
-    
+
     mapInstanceRef.current = map;
     updateMarkers();
   };
@@ -95,7 +95,7 @@ function TravelMap({ origin, destinations, tripData }) {
       'CME': 'Ciudad del Carmen, Mexico', 'TAP': 'Tapachula, Mexico', 'CJS': 'Ciudad Juárez, Mexico',
       'NLD': 'Nuevo Laredo, Mexico', 'PAZ': 'Poza Rica, Mexico', 'UPN': 'Uruapan, Mexico',
       'ZLO': 'Manzanillo, Mexico',
-      
+
       // ESTADOS UNIDOS
       'JFK': 'New York, USA', 'LAX': 'Los Angeles, USA', 'MIA': 'Miami, USA',
       'ORD': 'Chicago, USA', 'DFW': 'Dallas, USA', 'IAH': 'Houston, USA',
@@ -106,7 +106,7 @@ function TravelMap({ origin, destinations, tripData }) {
       'SAN': 'San Diego, USA', 'PDX': 'Portland, USA', 'AUS': 'Austin, USA',
       'BWI': 'Baltimore, USA', 'MSY': 'New Orleans, USA', 'SLC': 'Salt Lake City, USA',
       'TPA': 'Tampa, USA',
-      
+
       // EUROPA
       'LHR': 'London, United Kingdom', 'CDG': 'Paris, France', 'MAD': 'Madrid, Spain',
       'BCN': 'Barcelona, Spain', 'FCO': 'Rome, Italy', 'AMS': 'Amsterdam, Netherlands',
@@ -118,28 +118,28 @@ function TravelMap({ origin, destinations, tripData }) {
       'BUD': 'Budapest, Hungary', 'OTP': 'Bucharest, Romania', 'SOF': 'Sofia, Bulgaria',
       'BRU': 'Brussels, Belgium', 'MXP': 'Milan, Italy', 'VCE': 'Venice, Italy',
       'NAP': 'Naples, Italy',
-      
+
       // AMÉRICA DEL SUR
       'GRU': 'São Paulo, Brazil', 'GIG': 'Rio de Janeiro, Brazil', 'EZE': 'Buenos Aires, Argentina',
       'BOG': 'Bogotá, Colombia', 'LIM': 'Lima, Peru', 'SCL': 'Santiago, Chile',
       'UIO': 'Quito, Ecuador', 'GYE': 'Guayaquil, Ecuador', 'CCS': 'Caracas, Venezuela',
       'PTY': 'Panama City, Panama', 'MVD': 'Montevideo, Uruguay', 'ASU': 'Asunción, Paraguay',
-      
+
       // ASIA
       'NRT': 'Tokyo, Japan', 'HND': 'Tokyo, Japan', 'PEK': 'Beijing, China',
       'PVG': 'Shanghai, China', 'HKG': 'Hong Kong', 'SIN': 'Singapore',
       'ICN': 'Seoul, South Korea', 'BKK': 'Bangkok, Thailand', 'KUL': 'Kuala Lumpur, Malaysia',
       'MNL': 'Manila, Philippines', 'DEL': 'New Delhi, India', 'BOM': 'Mumbai, India',
       'DXB': 'Dubai, UAE', 'DOH': 'Doha, Qatar', 'TLV': 'Tel Aviv, Israel',
-      
+
       // CANADÁ
       'YYZ': 'Toronto, Canada', 'YVR': 'Vancouver, Canada', 'YUL': 'Montreal, Canada',
       'YYC': 'Calgary, Canada', 'YEG': 'Edmonton, Canada', 'YOW': 'Ottawa, Canada',
-      
+
       // OCEANÍA
       'SYD': 'Sydney, Australia', 'MEL': 'Melbourne, Australia', 'BNE': 'Brisbane, Australia',
       'AKL': 'Auckland, New Zealand',
-      
+
       // CARIBE Y CENTROAMÉRICA
       'SJO': 'San José, Costa Rica', 'SAL': 'San Salvador, El Salvador',
       'GUA': 'Guatemala City, Guatemala', 'TGU': 'Tegucigalpa, Honduras',
@@ -168,7 +168,7 @@ function TravelMap({ origin, destinations, tripData }) {
       geocoder.geocode({ address: searchCity }, (results, status) => {
         if (status === 'OK' && results[0]) {
           const location = results[0].geometry.location;
-          
+
           const marker = new window.google.maps.Marker({
             position: location,
             map: mapInstanceRef.current,
@@ -190,7 +190,7 @@ function TravelMap({ origin, destinations, tripData }) {
 
           markersRef.current.push(marker);
           bounds.extend(location);
-          
+
           if (markersRef.current.length > 0) {
             mapInstanceRef.current.fitBounds(bounds);
           }
@@ -202,7 +202,7 @@ function TravelMap({ origin, destinations, tripData }) {
     let originCity = origin;
     if (tripData?.originCity) originCity = tripData.originCity;
     else if (tripData?.origin) originCity = tripData.origin;
-    
+
     if (originCity) {
       geocodeCity(originCity, 'O', true);
     }
@@ -217,11 +217,11 @@ function TravelMap({ origin, destinations, tripData }) {
   };
 
   return (
-    <div 
-      ref={mapRef} 
-      style={{ 
-        width: '100%', 
-        height: '200px', 
+    <div
+      ref={mapRef}
+      style={{
+        width: '100%',
+        height: '200px',
         borderRadius: '8px',
         border: '1px solid #ddd'
       }}
@@ -305,7 +305,7 @@ function FinalItineraryModal({ onClose, tripData }) {
 
     try {
       await new Promise(resolve => setTimeout(resolve, 500));
-      
+
       input.style.display = 'block';
       input.style.opacity = '1';
       input.style.height = 'auto';
@@ -352,9 +352,9 @@ function FinalItineraryModal({ onClose, tripData }) {
       }
 
       pdf.save("Itinerario.pdf");
-      
+
       guardarItinerario();
-      
+
     } catch (err) {
       console.error("Error generando el PDF:", err);
       alert("Ocurrió un error al generar el PDF.");
@@ -373,6 +373,46 @@ function FinalItineraryModal({ onClose, tripData }) {
       currency: "MXN",
     });
   };
+  // 💰 CALCULAR COSTO REAL TOTAL
+  const calcularCostoReal = () => {
+    let total = 0;
+
+    destinations.forEach((destino) => {
+      // Vuelos
+      if (destino.selectedFlight?.price?.total) {
+        total += convertToMXN(
+          destino.selectedFlight.price.total,
+          destino.selectedFlight.price.currency
+        );
+      }
+
+      // Hoteles (precio por noche * número de días)
+      if (destino.selectedHotel?.price) {
+        const precioHotelMXN = convertToMXN(
+          destino.selectedHotel.price,
+          destino.selectedHotel.currency
+        );
+        const dias = Number(destino.dias) || 1;
+        total += precioHotelMXN * dias;
+      }
+
+      // Actividades
+      if (destino.selectedActivity?.price && destino.selectedActivity.price !== 'N/A') {
+        total += convertToMXN(
+          destino.selectedActivity.price,
+          destino.selectedActivity.currency
+        );
+      }
+    });
+
+    return total;
+  };
+
+  // 💰 COMPARAR CON PRESUPUESTO
+  const costoReal = calcularCostoReal();
+  const presupuesto = Number(budget) || 0;
+  const diferencia = presupuesto - costoReal;
+  const dentroPresupuesto = diferencia >= 0;
 
   const formatDuration = (duration) => {
     if (!duration) return "N/A";
@@ -421,29 +461,29 @@ function FinalItineraryModal({ onClose, tripData }) {
 
                     <div className="day-description">
                       <p><strong>Días:</strong> {destino.dias || "N/A"}</p>
-                      
+
                       <p>
                         <strong>Hotel:</strong>{" "}
                         {selectedHotel?.name
                           ? `${selectedHotel.name} (${selectedHotel.rating || "N/A"}★)`
-                          : hasOptions(destino, 'hotel') 
-                            ? "No seleccionado" 
+                          : hasOptions(destino, 'hotel')
+                            ? "No seleccionado"
                             : "No disponible"}
                       </p>
                       <p>
                         <strong>Precio por noche:</strong>{" "}
                         {selectedHotel?.price
                           ? `${convertToMXN(selectedHotel.price, selectedHotel.currency).toFixed(2)} MXN`
-                          : hasOptions(destino, 'hotel') 
-                            ? "Selecciona un hotel" 
+                          : hasOptions(destino, 'hotel')
+                            ? "Selecciona un hotel"
                             : "N/A"}
                       </p>
-                      
+
                       <p>
                         <strong>Actividad:</strong>{" "}
-                        {selectedActivity?.name || 
-                          (hasOptions(destino, 'activity') 
-                            ? "No seleccionada" 
+                        {selectedActivity?.name ||
+                          (hasOptions(destino, 'activity')
+                            ? "No seleccionada"
                             : "No disponible")}
                       </p>
                       {selectedActivity?.price && selectedActivity.price !== 'N/A' && (
@@ -460,7 +500,7 @@ function FinalItineraryModal({ onClose, tripData }) {
                               <FaPlaneDeparture /> &nbsp;
                               <strong>Vuelo Seleccionado</strong>
                             </div>
-                            
+
                             {selectedFlight.itineraries?.[0]?.segments?.map((segment, segIndex) => (
                               <div key={segIndex} className="flight-segment">
                                 <p>
@@ -468,25 +508,25 @@ function FinalItineraryModal({ onClose, tripData }) {
                                 </p>
                                 <p>
                                   <FaPlaneDeparture className="flight-icon" />{" "}
-                                  <strong>Salida:</strong> {segment.departure?.iataCode} 
-                                  {" "}({segment.departure?.at ? 
-                                    new Date(segment.departure.at).toLocaleDateString() + ", " + 
-                                    new Date(segment.departure.at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+                                  <strong>Salida:</strong> {segment.departure?.iataCode}
+                                  {" "}({segment.departure?.at ?
+                                    new Date(segment.departure.at).toLocaleDateString() + ", " +
+                                    new Date(segment.departure.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                                     : "N/A"})
                                 </p>
                                 <p>
                                   <FaPlaneArrival className="flight-icon" />{" "}
                                   <strong>Llegada:</strong> {segment.arrival?.iataCode}
-                                  {" "}({segment.arrival?.at ? 
-                                    new Date(segment.arrival.at).toLocaleDateString() + ", " + 
-                                    new Date(segment.arrival.at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+                                  {" "}({segment.arrival?.at ?
+                                    new Date(segment.arrival.at).toLocaleDateString() + ", " +
+                                    new Date(segment.arrival.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                                     : "N/A"})
                                 </p>
                                 <p>
                                   <strong>Duración:</strong> {formatDuration(selectedFlight.itineraries?.[0]?.duration)}
                                 </p>
                                 <p>
-                                  <strong>Precio:</strong> {selectedFlight.price?.total ? 
+                                  <strong>Precio:</strong> {selectedFlight.price?.total ?
                                     `${convertToMXN(selectedFlight.price.total, selectedFlight.price.currency).toFixed(2)} MXN`
                                     : "N/A"}
                                 </p>
@@ -521,7 +561,42 @@ function FinalItineraryModal({ onClose, tripData }) {
               <strong>Total de destinos:</strong> {destinations.length}
             </p>
 
-            <p className="total-cost">{calcularCostoTotal()}</p>
+            {/* 💰 SECCIÓN DE COSTOS */}
+            <div className="cost-comparison">
+              <div className="cost-row">
+                <span className="cost-label">Presupuesto:</span>
+                <span className="cost-value">
+                  {presupuesto.toLocaleString("es-MX", {
+                    style: "currency",
+                    currency: "MXN",
+                  })}
+                </span>
+              </div>
+
+              <div className="cost-row">
+                <span className="cost-label">Costo total:</span>
+                <span className={`cost-value ${dentroPresupuesto ? 'cost-ok' : 'cost-over'}`}>
+                  {costoReal.toLocaleString("es-MX", {
+                    style: "currency",
+                    currency: "MXN",
+                  })}
+                </span>
+              </div>
+
+              <hr className="cost-divider" />
+
+              <div className={`cost-row cost-difference ${dentroPresupuesto ? 'positive' : 'negative'}`}>
+                <span className="cost-label">
+                  {dentroPresupuesto ? '✅ Te sobran:' : '⚠️ Te excedes:'}
+                </span>
+                <span className="cost-value">
+                  {Math.abs(diferencia).toLocaleString("es-MX", {
+                    style: "currency",
+                    currency: "MXN",
+                  })}
+                </span>
+              </div>
+            </div>
 
             <div className="map-container">
               <TravelMap origin={origin} destinations={destinations} tripData={tripData} />
