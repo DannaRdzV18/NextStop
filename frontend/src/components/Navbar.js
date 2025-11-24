@@ -78,6 +78,8 @@ function Navbar() {
                             className="login-btn"
                             onClick={() => {
                                 if (usuario) {
+                                    // ✅ Cerrar el menú principal si está abierto
+                                    setShowMenu(false);
                                     setShowUserMenu(!showUserMenu);
                                 } else {
                                     setShowLoginModal(true);
@@ -95,27 +97,32 @@ function Navbar() {
                         )}
                     </div>
 
-                    {/* Botón de menú principal */}
-                    <div className="dropdown" ref={menuRef}>
-                        <button className="menu-btn" onClick={() => setShowMenu(!showMenu)}>
-                            <HiMenu className="menu-icon" />
-                            Menú
-                        </button>
+                    {/* ✅ SOLO MOSTRAR MENÚ SI HAY USUARIO LOGUEADO */}
+                    {usuario && (
+                        <div className="dropdown" ref={menuRef}>
+                            <button
+                                className="menu-btn"
+                                onClick={() => {
+                                    setShowUserMenu(false);
+                                    setShowMenu(!showMenu);
+                                }}
+                            >
+                                <HiMenu className="menu-icon" />
+                                Menú
+                            </button>
 
-                        {showMenu && (
-                            <div className="dropdown-menu">
-                                {/* ✅ SOLO MOSTRAR "Itinerarios creados" SI HAY USUARIO LOGUEADO */}
-                                {usuario && (
+                            {showMenu && (
+                                <div className="dropdown-menu">
                                     <Link to="/itinerarios" onClick={() => setShowMenu(false)}>
                                         Itinerarios creados
                                     </Link>
-                                )}
-                                <Link to="/soporte" onClick={() => setShowMenu(false)}>
-                                    Contactar a soporte
-                                </Link>
-                            </div>
-                        )}
-                    </div>
+                                    <Link to="/soporte" onClick={() => setShowMenu(false)}>
+                                        Contactar a soporte
+                                    </Link>
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
             </nav>
 
