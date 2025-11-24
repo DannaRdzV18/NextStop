@@ -430,8 +430,7 @@ function FinalItineraryModal({ onClose, tripData }) {
     <div className="final-itinerary-overlay">
       <div className="final-itinerary-modal" id="final-itinerary">
         <button className="close-modal-btn" onClick={handleClose}>×</button>
-        <h2 className="itinerary-title">Tu Itinerario</h2>
-
+        <h2 className="itinerary-title">Tu Itinerario - {userName}</h2>
         <div className="itinerary-content">
           <div className="itinerary-sidebar">
             <FaFlag size={30} className="flag-icon" />

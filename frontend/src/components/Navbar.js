@@ -4,7 +4,7 @@ import LoginModal from './LoginModal';
 import logo from '../assets/images/logo_nextstop.png';
 import { FaUser } from 'react-icons/fa';
 import { HiMenu } from 'react-icons/hi';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom'; // 🔥 Agregar useNavigate
 
 function Navbar() {
     const [showLoginModal, setShowLoginModal] = useState(false);
@@ -14,12 +14,20 @@ function Navbar() {
 
     const menuRef = useRef(null);
     const userMenuRef = useRef(null);
+    const navigate = useNavigate(); // 🔥 Hook para navegación
 
     useEffect(() => {
-        const storedUser = localStorage.getItem('usuario');
-        if (storedUser) {
-            setUsuario(JSON.parse(storedUser));
-        }
+        // 🔥 FUNCIÓN PARA ACTUALIZAR EL USUARIO
+        const updateUser = () => {
+            const storedUser = localStorage.getItem('usuario');
+            setUsuario(storedUser ? JSON.parse(storedUser) : null);
+        };
+
+        // Cargar usuario al montar
+        updateUser();
+
+        // 🔥 ESCUCHAR CAMBIOS DE LOGIN/LOGOUT
+        window.addEventListener('loginStatusChanged', updateUser);
 
         // Cerrar menús al hacer clic fuera
         const handleClickOutside = (event) => {
@@ -33,7 +41,11 @@ function Navbar() {
         };
 
         document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
+        
+        return () => {
+            window.removeEventListener('loginStatusChanged', updateUser);
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
     }, []);
 
     const handleLogin = (userData) => {
@@ -43,8 +55,17 @@ function Navbar() {
 
     const handleLogout = () => {
         localStorage.removeItem('usuario');
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        
+        // 🔥 DISPARAR EVENTO PARA QUE OTROS COMPONENTES SE ENTEREN
+        window.dispatchEvent(new Event('loginStatusChanged'));
+        
         setUsuario(null);
         setShowUserMenu(false);
+        
+        // 🔥 REDIRIGIR A LA PÁGINA PRINCIPAL
+        navigate('/');
     };
 
     return (

@@ -7,6 +7,7 @@ import 'react-datepicker/dist/react-datepicker.css';
 import { IoLocationSharp, IoPeople } from 'react-icons/io5';
 import { MdCalendarToday } from 'react-icons/md';
 import { RiMoneyDollarCircleFill } from 'react-icons/ri';
+import { FaPlaneDeparture, FaHotel, FaMapMarkerAlt, FaMoneyBillWave } from 'react-icons/fa';
 import DestinationModal from './DestinationModal';
 import FinalItineraryModal from './FinalItineraryModal';
 
@@ -32,7 +33,11 @@ function TripPlanner() {
   const [isLoadingOrigin, setIsLoadingOrigin] = useState(false);
   const [originDisplay, setOriginDisplay] = useState('');
 
-  // 🔹 Reiniciar datos después de crear itinerario
+  const [usuario, setUsuario] = useState(() => {
+    const storedUser = localStorage.getItem('usuario');
+    return storedUser ? JSON.parse(storedUser) : null;
+  });
+
   const resetTripData = () => {
     setTripData({
       origin: '',
@@ -46,7 +51,6 @@ function TripPlanner() {
     });
   };
 
-  // 🔹 Añadir destino
   const addDestination = (nuevoDestino) => {
     setTripData((prev) => {
       const prevDestinations = prev.destinations || [];
@@ -56,7 +60,6 @@ function TripPlanner() {
       const totalDays = calculateDurationFromPrev(prev);
 
       if (totalDays > 0 && usedDays >= totalDays) {
-        // Cierra modal de destino y abre modal final
         setTimeout(() => setShowItineraryModal(true), 100);
       }
 
@@ -74,22 +77,25 @@ function TripPlanner() {
     return 0;
   };
 
-  // 🔹 Estado del usuario
-  const [usuario, setUsuario] = useState(() => {
-    const storedUser = localStorage.getItem('usuario');
-    return storedUser ? JSON.parse(storedUser) : null;
-  });
-
+  // 🔥 ESCUCHAR CAMBIOS DE LOGIN/LOGOUT
   useEffect(() => {
     const handleStorageChange = () => {
       const storedUser = localStorage.getItem('usuario');
       setUsuario(storedUser ? JSON.parse(storedUser) : null);
     };
+    
+    // Escuchar cambios de storage (otras pestañas)
     window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    
+    // 🔥 ESCUCHAR CAMBIOS DE LOGIN/LOGOUT (misma pestaña)
+    window.addEventListener('loginStatusChanged', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('loginStatusChanged', handleStorageChange);
+    };
   }, []);
 
-  // 🔹 Limpia destinos si cambian datos principales
   useEffect(() => {
     if ((tripData.destinations || []).length > 0) {
       setTripData((prev) => ({ ...prev, destinations: [] }));
@@ -134,7 +140,6 @@ function TripPlanner() {
     return tripData.origin && tripData.departureDate && tripData.returnDate && totalPeople > 0 && tripData.budget;
   };
 
-  // ✅ MODIFICADO: Verificar si el usuario ha iniciado sesión antes de agregar destinos
   const handleOpenDestinationModal = () => {
     const token = localStorage.getItem('access_token');
     if (!token) {
@@ -153,12 +158,50 @@ function TripPlanner() {
     setShowDestinationModal(true);
   };
 
+  // SI NO HAY USUARIO, MOSTRAR HERO SECTION
+  if (!usuario) {
+    return (
+      <div className="hero-section-planner">
+        <h2 className="hero-title">¡Bienvenido a NextStop!</h2>
+        <p className="hero-subtitle">Tu compañero perfecto de viaje</p>
+
+        <div className="features-grid">
+          <div className="feature-item">
+            <FaPlaneDeparture className="feature-icon" />
+            <h4>Planifica itinerarios completos</h4>
+            <p>Organiza cada detalle de tu viaje</p>
+          </div>
+
+          <div className="feature-item">
+            <FaHotel className="feature-icon" />
+            <h4>Encuentra hoteles y vuelos</h4>
+            <p>Compara opciones en tiempo real</p>
+          </div>
+
+          <div className="feature-item">
+            <FaMapMarkerAlt className="feature-icon" />
+            <h4>Descubre actividades únicas</h4>
+            <p>Explora lo mejor de cada destino</p>
+          </div>
+
+          <div className="feature-item">
+            <FaMoneyBillWave className="feature-icon" />
+            <h4>Controla tu presupuesto</h4>
+            <p>Mantén tus gastos bajo control</p>
+          </div>
+        </div>
+
+        <p className="hero-cta">Inicia sesión para comenzar a planear tu próxima aventura</p>
+      </div>
+    );
+  }
+
+  // SI HAY USUARIO, MOSTRAR FORMULARIO NORMAL
   return (
     <div className="trip-planner">
       <h3 className="trip-title">Crea y planea tu viaje</h3>
       <p className="trip-subtitle">Comencemos con los datos básicos de tu viaje</p>
 
-      {/* Origen */}
       <div className="form-group">
         <label>
           <IoLocationSharp className="icon" />
@@ -198,7 +241,6 @@ function TripPlanner() {
         </div>
       </div>
 
-      {/* Fechas */}
       <div className="form-row spaced">
         <div className="form-group">
           <label>
@@ -232,12 +274,10 @@ function TripPlanner() {
         </div>
       </div>
 
-      {/* Duración */}
       <div className="duration-display">
         <strong>Duración del viaje:</strong> {calculateDuration()} días
       </div>
 
-      {/* Personas y presupuesto */}
       <div className="form-row spaced">
         <div className="form-group">
           <label>
@@ -263,14 +303,12 @@ function TripPlanner() {
         </div>
       </div>
 
-      {/* Botón agregar destinos */}
       <div className="btn-container">
         <button className="add-destination-btn" onClick={handleOpenDestinationModal}>
           Agregar destinos →
         </button>
       </div>
 
-      {/* Modal destinos */}
       {showDestinationModal && (
         <DestinationModal
           onClose={() => setShowDestinationModal(false)}
@@ -285,7 +323,6 @@ function TripPlanner() {
         />
       )}
 
-      {/* Modal final de itinerario */}
       {showItineraryModal && (
         <FinalItineraryModal
           onClose={() => {
@@ -299,14 +336,12 @@ function TripPlanner() {
         />
       )}
 
-      {/* Modal personas */}
       {showPersonModal && (
         <div className="modal-overlay">
           <div className="person-modal">
             <h3>Personas</h3>
             <p className="modal-subtitle">¿Cuántos van?</p>
 
-            {/* Adultos */}
             <div className="person-row">
               <div className="person-info">
                 <strong>Adultos (de 18 a 64 años)</strong>
@@ -328,7 +363,6 @@ function TripPlanner() {
               </div>
             </div>
 
-            {/* Adultos mayores */}
             <div className="person-row">
               <div className="person-info">
                 <strong>Adultos mayores (65 años en adelante)</strong>
@@ -350,7 +384,6 @@ function TripPlanner() {
               </div>
             </div>
 
-            {/* Niños */}
             <div className="person-row">
               <div className="person-info">
                 <strong>Niños (0 a 17 años)</strong>
@@ -372,7 +405,6 @@ function TripPlanner() {
               </div>
             </div>
 
-            {/* Botón Aceptar */}
             <button 
               className="accept-persons-btn"
               onClick={() => setShowPersonModal(false)}

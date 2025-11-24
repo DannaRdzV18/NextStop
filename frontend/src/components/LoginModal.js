@@ -39,7 +39,7 @@ function LoginModal({ onClose, onLogin }) {
         return () => clearTimeout(timer);
     }, [contador, step]);
 
-        // 🔹 Iniciar sesión con reCAPTCHA
+    // 🔹 Iniciar sesión con reCAPTCHA
     const handleLogin = async () => {
         if (!recaptchaToken) {
             alert("Por favor completa el reCAPTCHA antes de continuar.");
@@ -56,9 +56,12 @@ function LoginModal({ onClose, onLogin }) {
 
             const usuarioData = response.data.usuario;
             setMessage('Inicio de sesión exitoso ✅');
-            localStorage.setItem("access_token",response.data.token.access);
-            localStorage.setItem("refresh_token",response.data.token.refresh);
-            localStorage.setItem("usuario",JSON.stringify(usuarioData));
+            localStorage.setItem("access_token", response.data.token.access);
+            localStorage.setItem("refresh_token", response.data.token.refresh);
+            localStorage.setItem("usuario", JSON.stringify(usuarioData));
+
+            // 🔥 DISPARAR EVENTO PARA ACTUALIZAR OTROS COMPONENTES
+            window.dispatchEvent(new Event('loginStatusChanged'));
 
             onLogin(usuarioData);
             onClose();
@@ -240,18 +243,18 @@ function LoginModal({ onClose, onLogin }) {
                         {/* 🧩 reCAPTCHA LOGIN */}
                         <div style={{ margin: '15px 0', textAlign: 'center' }}>
                             <ReCAPTCHA
-                                sitekey="6LeIrwssAAAAAEGMhSaYATcyWOjw4_HxAavM31E9"  // 👈 cambia este por tu clave de sitio
+                                sitekey="6LeIrwssAAAAAEGMhSaYATcyWOjw4_HxAavM31E9"
                                 onChange={(token) => setRecaptchaToken(token)}
                                 onExpired={() => setRecaptchaToken(null)}
                             />
                         </div>
 
                         <button
-                        className="primary-btn"
-                        onClick={handleLogin}
-                        disabled={!formData.email || !formData.password || !recaptchaToken || loading}
+                            className="primary-btn"
+                            onClick={handleLogin}
+                            disabled={!formData.email || !formData.password || !recaptchaToken || loading}
                         >
-                        {loading ? 'Cargando...' : 'Iniciar sesión'}
+                            {loading ? 'Cargando...' : 'Iniciar sesión'}
                         </button>
 
                         <button className="text-btn" onClick={() => setStep('options')}>
