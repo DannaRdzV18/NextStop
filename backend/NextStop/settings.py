@@ -130,7 +130,7 @@ DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 # 🌐 CORS y CSRF
 # ==========================
 CORS_ALLOWED_ORIGINS = [
-    "https://nextstop-app-u9cvd.ondigitalocean.app",
+    "https://seal-app-u4egd.ondigitalocean.app/",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
 ]
@@ -138,7 +138,7 @@ CORS_ALLOWED_ORIGINS = [
 CORS_ALLOW_CREDENTIALS = True
 
 CSRF_TRUSTED_ORIGINS = [
-    "https://nextstop-app-u9cvd.ondigitalocean.app",
+    "https://seal-app-u4egd.ondigitalocean.app/",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
 ]
